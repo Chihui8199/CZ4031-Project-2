@@ -1,0 +1,7 @@
+{
+    "host": "localhost",
+    "port": "5432",
+    "database": "TPC-H",
+    "user": "chihui",
+    "password": "inqh8199"
+}
