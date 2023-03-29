@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 import ttkbootstrap as ttk
 # FONT SETTINGS
-FONT = "Arial"
+FONT = "Palatino"
 BOLD = "BOLD"
 ITALIC = "ITALIC"
 UNDERLINE = "UNDERLINE"
@@ -27,64 +27,128 @@ class Application(ttk.Window):
         Generate the main UI screen for most user interactions.
         """
 
-
-
-
-
-
         s = ttk.Style()
-        # Create style used by default for all Frames
         s.configure('TFrame', background='#2C3143')
-        self.window_container = ttk.Frame(self)
-
+        self.window_container = ttk.Frame(self, style='TFrame')
         self.window_container.pack(fill=tk.BOTH)
-        # self.window_container.configure(background='#ADD8E6')
-
-
         self.app_label = ttk.Label(self.window_container, text="CZ4031 Project 2", font=FONT_TITLE, anchor=CENTER, background="#2C3143", foreground='white')
         self.app_label.pack(fill=tk.X, pady=[30,30])
 
-        separator = ttk.Separator(self.window_container, orient='horizontal')
+        # Horizontal line below title
+        s.configure("Line.TSeparator", background="black")
+        separator = ttk.Separator(self.window_container, orient='horizontal', style="Line.TSeparator")
         separator.pack(fill='x')
         
+        
         #Create Panedwindow  
-        panedwindow=ttk.Panedwindow(self, orient=HORIZONTAL)  
+        panedwindow=PanedWindow(self, orient=HORIZONTAL, bd=4, bg="#1C1C1E")  
         panedwindow.pack(fill=BOTH, expand=True)  
-        #Create Frams  
+        
 
         # Frame for left
-        self.window_container_left = ttk.Frame(panedwindow,width=250,height=400, relief=GROOVE)
+        self.window_container_left = ttk.Frame(panedwindow,width=250,height=400)
         self.window_container_left.pack(fill=tk.BOTH, side= LEFT)
         
         # Frame for right
-        self.window_container_right = ttk.Frame(panedwindow,width=250,height=400, relief=GROOVE)
+        self.window_container_right = ttk.Frame(panedwindow,width=250,height=400)
         self.window_container_right.pack(fill=tk.BOTH, side= RIGHT)
 
-        panedwindow.add(self.window_container_left, weight=5)  
-        panedwindow.add(self.window_container_right, weight=5)  
+        panedwindow.add(self.window_container_left)  
+        panedwindow.add(self.window_container_right)  
 
 
-        self.initial_query_label = ttk.Label(self.window_container_left, text="Initial Query:", background="#2C3143")
-        self.initial_query_label.pack(side=LEFT)
+        # Left window -----------------------------------------------------------------------------------
+
+        # self.initial_query_label = ttk.Label(self.window_container_left, text="Initial Query:", background="#2C3143")
+        # self.initial_query_label.pack()
+
+        # Initial Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        self.sql_container = ttk.Frame(self.window_container_left,borderwidth=0)
+        self.sql_container.pack(fill=tk.BOTH)
+
+        my_label = Label(self.sql_container, text="Initial Query:", font=("Helvetica", 18))
+        my_label.configure(background='#2C3143', foreground='white')
+        my_label.pack(pady=20)
 
         queries_selection = ["Query 1","Query 2","Query 3", "Query 4","Query 5","Query 6", "Query 7"]
         value = tk.StringVar()
-        self.example_query = ttk.OptionMenu(self.window_container_left, value, queries_selection[0], *queries_selection)
-        self.example_query.pack(padx=50)
+        self.example_query = ttk.OptionMenu(self.sql_container, value, queries_selection[0], *queries_selection)
+        self.example_query.pack()
 
-        # self.creators_label = ttk.Label(self.window_container, text="By Group 14: Qi Wei, Kong Tat, Ryan, Xing Kun, Lyndon", font=FONT_CREDITS, anchor=CENTER,  background="#2C3143")
-        # self.creators_label.pack(fill=tk.X)
-    
-        self.tabs_holders = ttk.Notebook(self.window_container_right, bootstyle="SECONDARY")
-        self.tabs_holders.pack(fill=tk.BOTH, padx=10, pady=10)
+        my_text = Text(self.sql_container, width=70, height=10)
+        my_text.pack(pady=10, padx=10)
 
-        self.query_container = ttk.Frame(self.tabs_holders)
+
+
+        # New Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        my_label = Label(self.sql_container, text="New Query:", font=("Helvetica", 18))
+        my_label.configure(background='#2C3143', foreground='white')
+        my_label.pack(pady=20)
+
+        queries_selection = ["Query 1","Query 2","Query 3", "Query 4","Query 5","Query 6", "Query 7"]
+        value = tk.StringVar()
+        self.example_query = ttk.OptionMenu(self.sql_container, value, queries_selection[0], *queries_selection)
+        self.example_query.pack()
+
+        my_text = Text(self.sql_container, width=70, height=10)
+        my_text.pack(pady=10, padx=10)
+
+        my_button = ttk.Button (self.sql_container, text="Submit", bootstyle="secondary")
+        my_button.pack(pady=20)
+
+        
+        
+        # Right window -----------------------------------------------------------------------------------
+
+        s.configure("Custom.TNotebook", tabposition="n", background="#2C3143", bordercolor="#2C3143")
+        s.configure("Custom.TNotebook.Tab",background="#6C788B",foreground='white')
+        s.map("Custom.TNotebook.Tab", background=[("selected", "#2C3143")], foreground=[("selected", "white")])
+
+        # s.configure("Custom.TNotebook.Tab",background="#6C788B",foreground='white', font=("Helvetica", 20))
+        # s.map("Custom.TNotebook.Tab", background=[("selected", "#2C3143")], foreground=[("selected", "white")], font=[("selected", ("Helvetica", 20))])
+
+        # create the notebook with the custom style
+        self.tabs_holders = ttk.Notebook(self.window_container_right, style="Custom.TNotebook" )
+        self.tabs_holders.pack(pady=[30,30])
+
+
+        # Query Plan Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        self.query_container = ttk.Frame(self.tabs_holders,borderwidth=0)
         self.query_container.pack(fill=tk.BOTH)
         self.tabs_holders.add(self.query_container, text="Query Plan")
+        
+        my_label = Label(self.query_container, text="Initial Query:", font=("Helvetica", 18))
+        my_label.configure(background='#2C3143', foreground='white')        
+        my_label.pack(pady=20)
+        my_text = Text(self.query_container, width=70, height=10)
+        my_text.pack(pady=10, padx=10)
 
-        self.tree_output_container = ttk.Frame(self.tabs_holders)
-        self.tree_output_container.pack(fill=tk.BOTH)
-        self.tabs_holders.add(self.tree_output_container, text="Analysis")
+        my_label = Label(self.query_container, text="New Query:", font=("Helvetica", 18))
+        my_label.configure(background='#2C3143', foreground='white')        
+        my_label.pack(pady=20)
+        my_text = Text(self.query_container, width=70, height=10)
+        my_text.pack(pady=10, padx=10)
+
+
+        # Analysis Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        self.analysis_container = ttk.Frame(self.tabs_holders,borderwidth=0)
+        self.analysis_container.pack(fill=tk.BOTH)
+        self.tabs_holders.add(self.analysis_container, text="Analysis")
+
+        my_label = Label(self.analysis_container, text="Initial Query:", font=("Helvetica", 18))
+        my_label.configure(background='#2C3143', foreground='white')
+        my_label.pack(pady=20)
+        my_text = Text(self.analysis_container, width=70, height=10)
+        my_text.pack(pady=10, padx=10)
+
+
+        my_label = Label(self.analysis_container, text="New Query:", font=("Helvetica", 18))
+        my_label.configure(background='#2C3143', foreground='white')
+        my_label.pack(pady=20)
+        my_text = Text(self.analysis_container, width=70, height=10)
+        my_text.pack(pady=[10,80], padx=10)
+
 
         # self.sql_output_container = ttk.Frame(self.tabs_holders)
         # self.sql_output_container.pack(fill=tk.BOTH)
