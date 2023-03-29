@@ -1,0 +1,6 @@
+anytree==2.8.0
+colorama==0.4.6
+Pillow==9.2.0
+psycopg2==2.9.5
+sqlparse==0.4.3
+ttkbootstrap==1.9.0
