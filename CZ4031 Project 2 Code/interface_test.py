@@ -63,37 +63,44 @@ class Application(ttk.Window):
         # self.initial_query_label.pack()
 
         # Initial Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        self.sql_container = ttk.Frame(self.window_container_left,borderwidth=0)
-        self.sql_container.pack(fill=tk.BOTH)
+        self.sql_container1 = ttk.Frame(self.window_container_left,borderwidth=0)
+        self.sql_container1.pack(pady = 10, fill=tk.BOTH)
 
-        my_label = Label(self.sql_container, text="Initial Query:", font=("Helvetica", 18))
+        my_label = Label(self.sql_container1, text="Initial Query:", font=("Helvetica", 18))
         my_label.configure(background='#2C3143', foreground='white')
-        my_label.pack(pady=20)
+        my_label.pack(padx=10,pady=10,anchor = NW, side=LEFT)
 
         queries_selection = ["Query 1","Query 2","Query 3", "Query 4","Query 5","Query 6", "Query 7"]
         value = tk.StringVar()
-        self.example_query = ttk.OptionMenu(self.sql_container, value, queries_selection[0], *queries_selection)
-        self.example_query.pack()
+        self.example_query = ttk.OptionMenu(self.sql_container1, value, queries_selection[0], *queries_selection)
+        self.example_query.pack(padx=10,pady=10,anchor = NE, side = RIGHT)
 
-        my_text = Text(self.sql_container, width=70, height=10)
+        self.text_container1 = ttk.Frame(self.window_container_left,borderwidth=0)
+        self.text_container1.pack()
+
+        my_text = Text(self.text_container1, width=70, height=10)
         my_text.pack(pady=10, padx=10)
-
-
 
         # New Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        my_label = Label(self.sql_container, text="New Query:", font=("Helvetica", 18))
-        my_label.configure(background='#2C3143', foreground='white')
-        my_label.pack(pady=20)
+        self.sql_container2 = ttk.Frame(self.window_container_left,borderwidth=0)
+        self.sql_container2.pack(pady = 10, fill=tk.BOTH)
 
+        my_label = Label(self.sql_container2, text="New Query:", font=("Helvetica", 18))
+        my_label.configure(background='#2C3143', foreground='white')
+        my_label.pack(padx=10,pady=10,anchor = NW, side=LEFT)
+        
         queries_selection = ["Query 1","Query 2","Query 3", "Query 4","Query 5","Query 6", "Query 7"]
         value = tk.StringVar()
-        self.example_query = ttk.OptionMenu(self.sql_container, value, queries_selection[0], *queries_selection)
-        self.example_query.pack()
+        self.example_query = ttk.OptionMenu(self.sql_container2, value, queries_selection[0], *queries_selection)
+        self.example_query.pack(padx=10,pady=10,anchor = NE, side = RIGHT)
 
-        my_text = Text(self.sql_container, width=70, height=10)
+        self.text_container2 = ttk.Frame(self.window_container_left,borderwidth=0)
+        self.text_container2.pack()
+
+        my_text = Text(self.text_container2, width=70, height=10)
         my_text.pack(pady=10, padx=10)
 
-        my_button = ttk.Button (self.sql_container, text="Submit", bootstyle="secondary")
+        my_button = ttk.Button (self.text_container2, text="Submit", bootstyle="secondary")
         my_button.pack(pady=20)
 
         
