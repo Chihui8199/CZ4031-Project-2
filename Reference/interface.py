@@ -233,9 +233,9 @@ NODE_COLORS = {node_type: color
 
 #config.py
 # DATABASE CONNECTIONS
-DATABASE_NAME = "TPC-H"
+DATABASE_NAME = "cz4031"
 DATABASE_USERNAME = "postgres"
-DATABASE_PASSWORD = "password"
+DATABASE_PASSWORD = "63632625"
 DATABASE_HOST = '127.0.0.1'
 DATABASE_PORT = 5432
 
@@ -294,7 +294,7 @@ class QEPAnalyzer(ttk.Window):
         self.title("CZ4031 QEP Analyzer")
         self.geometry("1400x800")
         self.option_add("*Font", FONT_REGULAR)
-        self.favicon_ico_path = 'app_icon.ico'
+        self.favicon_ico_path = 'Reference/app_icon.ico'
         self.icon_photo = ImageTk.PhotoImage(
             Image.open(self.favicon_ico_path))
         self.iconphoto(False, self.icon_photo)
@@ -384,6 +384,7 @@ class QEPAnalyzer(ttk.Window):
         """
         log(INFO, f"Trying to connect to database [{DATABASE_NAME}] at {DATABASE_HOST}:{DATABASE_PORT}")
         try:
+            print(DATABASE_NAME,DATABASE_USERNAME,DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT)
             self.conn = psycopg2.connect(
                 dbname=DATABASE_NAME,
                 user=DATABASE_USERNAME,

@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 import ttkbootstrap as ttk
+import sqlparse
+import pyodbc
 # FONT SETTINGS
 FONT = "Palatino"
 BOLD = "BOLD"
@@ -78,8 +80,8 @@ class Application(ttk.Window):
         self.text_container1 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.text_container1.pack()
 
-        my_text = Text(self.text_container1, width=70, height=10)
-        my_text.pack(pady=10, padx=10)
+        self.query_1 = Text(self.text_container1, width=70, height=10)
+        self.query_1.pack(pady=10, padx=10)
 
         # New Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         self.sql_container2 = ttk.Frame(self.window_container_left,borderwidth=0)
@@ -97,11 +99,11 @@ class Application(ttk.Window):
         self.text_container2 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.text_container2.pack()
 
-        my_text = Text(self.text_container2, width=70, height=10)
-        my_text.pack(pady=10, padx=10)
+        self.query_2 = Text(self.text_container2, width=70, height=10)
+        self.query_2.pack(pady=10, padx=10)
 
-        my_button = ttk.Button (self.text_container2, text="Submit", bootstyle="secondary")
-        my_button.pack(pady=20)
+        self.submit_button = ttk.Button (self.text_container2, text="Submit", command=self.submit_queries , bootstyle="secondary")
+        self.submit_button.pack(pady=20)
 
         
         
@@ -143,18 +145,76 @@ class Application(ttk.Window):
         self.analysis_container.pack(fill=tk.BOTH)
         self.tabs_holders.add(self.analysis_container, text="Analysis")
 
-        my_label = Label(self.analysis_container, text="Initial Query:", font=("Helvetica", 18))
+        my_label = Label(self.analysis_container, text="What has changed and why:", font=("Helvetica", 18))
         my_label.configure(background='#2C3143', foreground='white')
         my_label.pack(pady=20)
-        my_text = Text(self.analysis_container, width=70, height=10)
+        my_text = Text(self.analysis_container, width=70, height=50)
         my_text.pack(pady=10, padx=10)
 
 
-        my_label = Label(self.analysis_container, text="New Query:", font=("Helvetica", 18))
-        my_label.configure(background='#2C3143', foreground='white')
-        my_label.pack(pady=20)
-        my_text = Text(self.analysis_container, width=70, height=10)
-        my_text.pack(pady=[10,80], padx=10)
+
+    def submit_queries(self):
+            """
+            Starts the whole analysis process of the given query.
+
+            Trigger: By button click or shortcut key [F5]
+            """
+            # Disable button to prevent spamming
+            self.submit_button.configure(state=DISABLED)
+
+            # Get query from user input and clean query
+            self.initial_query = self.query_1.get('1.0', 'end-1c')
+            self.initial_query = self.initial_query.strip()
+            self.initial_query = self.initial_query.replace('\n', ' ')
+            # self.initial_query = sqlparse.format(self.initial_query, reindent=True, keyword_case='upper')        
+            
+            self.new_query = self.query_2.get('1.0', 'end-1c')
+            self.new_query = self.new_query.strip()
+            self.new_query = self.new_query.replace('\n', ' ')
+            # self.new_query = sqlparse.format(self.new_query, reindent=True, keyword_case='upper')        
+            
+            print(self.initial_query, self.new_query)
+
+
+    def why_change(self):
+        print(self.initial_query, self.new_query)
+        # parsed_sql1 = sqlparse.parse(self.initial_query)[0]
+        # parsed_sql2 = sqlparse.parse(self.new_query)[0]
+
+        # Generate the execution plans
+        # insert code to generate query plans
+
+        # Compare the execution plans
+        diffs = sql_metadata.diff(plan1, plan2)
+
+        # Describe the changes in the execution plans
+        description = "During the data exploration, we made changes to the WHERE clause in the SQL query, which resulted in changes to the execution plan. In the original plan, the query used a {join_type} to combine the data from different tables. However, in the updated plan, the query now uses a {new_join_type} to combine the data. This change in the join type is due to the changes made in the WHERE clause of the SQL query, which affected the optimizer's decision on the most efficient way to retrieve the data.".format(join_type=diffs['join_type'], new_join_type=diffs['new_join_type'])
+
+        print(description)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        # my_label = Label(self.analysis_container, text="New Query:", font=("Helvetica", 18))
+        # my_label.configure(background='#2C3143', foreground='white')
+        # my_label.pack(pady=20)
+        # my_text = Text(self.analysis_container, width=70, height=10)
+        # my_text.pack(pady=[10,80], padx=10)
 
 
         # self.sql_output_container = ttk.Frame(self.tabs_holders)
@@ -242,5 +302,4 @@ class Application(ttk.Window):
         # # Create submit button
         # submit_button = tk.Button(root, text="Submit", command=submit)
         # submit_button.pack()
-
 
