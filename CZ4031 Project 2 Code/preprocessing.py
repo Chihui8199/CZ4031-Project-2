@@ -1,19 +1,18 @@
-"""
-Contains code for preprocessing user inputs and data used in algorithm
-"""
-
 import json
+import os
+from graphviz import Digraph
 import psycopg2
 
 class Preprocessing:    
     def __init__(self):
         print("INITIALIZING PREPROCESSING CLASS")
         self.db = DBConnection()
-        print("THIS IS THE DB OBJECT: ", self.db.execute(query="select * from customer C, orders O where C.c_custkey = O.o_custkey"))
-
+        query="select * from customer C, orders O where C.c_custkey = O.o_custkey"
+        print("THIS IS THE DB OBJECT: ", self.db.execute(query=query))
+        self.db.createGraph()
+        
 class DBConnection:
     def __init__(self, db_config_path: str = 'config.json'):
-        import os
         dir_path = os.path.dirname(os.path.realpath(__file__))
         db_config_path = os.path.join(dir_path, "config.json")
 
@@ -39,8 +38,30 @@ class DBConnection:
             # If adding results to the app
             # self.cur.execute(query)
             # query_results = self.cur.fetchall()
-            # return query_results
+            
+            
+            json_plan = json.dumps(query_plan)
+            with open('query_plan.json', 'w') as f:
+                f.write(json_plan)
+                
             return
         except Exception as e:
             pass
-        
+
+    def createGraph(self):
+        # Load query plan from JSON file
+        with open('query_plan.json') as f:
+            query_plan = json.load(f)
+
+        # Create a new graph
+        dot = Digraph()
+
+        # Loop through the query plan and add nodes to the graph
+        for i, node in enumerate(query_plan):
+            label = '\n'.join(node)
+            dot.node(str(i), label=label)
+            if i > 0:
+                dot.edge(str(i-1), str(i))
+
+        # Save the graph as a PNG image
+        dot.render('query_plan', format='png')
