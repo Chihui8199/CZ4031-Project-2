@@ -1,9 +1,15 @@
+import difflib
+import re
 import tkinter as tk
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
+import string
 import ttkbootstrap as ttk
 import sqlparse
-import pyodbc
+from preprocessing import *
+# import pyodbc
+import sql_metadata
+
 # FONT SETTINGS
 FONT = "Palatino"
 BOLD = "BOLD"
@@ -81,6 +87,7 @@ class Application(ttk.Window):
         self.text_container1.pack()
 
         self.query_1 = Text(self.text_container1, width=70, height=10)
+        self.query_1.insert('1.0',"select * from customer C, orders O where C.c_custkey = O.o_custkey")
         self.query_1.pack(pady=10, padx=10)
 
         # New Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,6 +107,7 @@ class Application(ttk.Window):
         self.text_container2.pack()
 
         self.query_2 = Text(self.text_container2, width=70, height=10)
+        self.query_2.insert('1.0',"select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey  ")
         self.query_2.pack(pady=10, padx=10)
 
         self.submit_button = ttk.Button (self.text_container2, text="Submit", command=self.submit_queries , bootstyle="secondary")
@@ -126,17 +134,17 @@ class Application(ttk.Window):
         self.query_container.pack(fill=tk.BOTH)
         self.tabs_holders.add(self.query_container, text="Query Plan")
         
-        my_label = Label(self.query_container, text="Initial Query:", font=("Helvetica", 18))
-        my_label.configure(background='#2C3143', foreground='white')        
-        my_label.pack(pady=20)
-        my_text = Text(self.query_container, width=70, height=10)
-        my_text.pack(pady=10, padx=10)
+        self.initial_query_plan_label = Label(self.query_container, text="Initial Query:", font=("Helvetica", 18))
+        self.initial_query_plan_label.configure(background='#2C3143', foreground='white')        
+        self.initial_query_plan_label.pack(pady=20)
+        self.initial_query_plan_text = Text(self.query_container, width=70, height=10)
+        self.initial_query_plan_text.pack(pady=10, padx=10)
 
-        my_label = Label(self.query_container, text="New Query:", font=("Helvetica", 18))
-        my_label.configure(background='#2C3143', foreground='white')        
-        my_label.pack(pady=20)
-        my_text = Text(self.query_container, width=70, height=10)
-        my_text.pack(pady=10, padx=10)
+        self.new_query_plan_label = Label(self.query_container, text="New Query:", font=("Helvetica", 18))
+        self.new_query_plan_label.configure(background='#2C3143', foreground='white')        
+        self.new_query_plan_label.pack(pady=20)
+        self.new_query_plan_text = Text(self.query_container, width=70, height=10)
+        self.new_query_plan_text.pack(pady=10, padx=10)
 
 
         # Analysis Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,11 +153,11 @@ class Application(ttk.Window):
         self.analysis_container.pack(fill=tk.BOTH)
         self.tabs_holders.add(self.analysis_container, text="Analysis")
 
-        my_label = Label(self.analysis_container, text="What has changed and why:", font=("Helvetica", 18))
-        my_label.configure(background='#2C3143', foreground='white')
-        my_label.pack(pady=20)
-        my_text = Text(self.analysis_container, width=70, height=50)
-        my_text.pack(pady=10, padx=10)
+        self.analysis_label = Label(self.analysis_container, text="What has changed and why:", font=("Helvetica", 18))
+        self.analysis_label.configure(background='#2C3143', foreground='white')
+        self.analysis_label.pack(pady=20)
+        self.analysis_text = Text(self.analysis_container, width=70, height=50)
+        self.analysis_text.pack(pady=10, padx=10)
 
 
 
@@ -166,31 +174,71 @@ class Application(ttk.Window):
             self.initial_query = self.query_1.get('1.0', 'end-1c')
             self.initial_query = self.initial_query.strip()
             self.initial_query = self.initial_query.replace('\n', ' ')
-            # self.initial_query = sqlparse.format(self.initial_query, reindent=True, keyword_case='upper')        
-            
+
             self.new_query = self.query_2.get('1.0', 'end-1c')
             self.new_query = self.new_query.strip()
             self.new_query = self.new_query.replace('\n', ' ')
-            # self.new_query = sqlparse.format(self.new_query, reindent=True, keyword_case='upper')        
             
-            print(self.initial_query, self.new_query)
+            self.why_change(self.initial_query,self.new_query)
 
 
-    def why_change(self):
-        print(self.initial_query, self.new_query)
-        # parsed_sql1 = sqlparse.parse(self.initial_query)[0]
-        # parsed_sql2 = sqlparse.parse(self.new_query)[0]
 
-        # Generate the execution plans
-        # insert code to generate query plans
+    def get_updated_clause(self, initial_query, new_query):
+        initial_query_parts = initial_query.split('where')
+        new_query_parts = new_query.split('where')
+        
+        if len(initial_query_parts) == 1 or len(new_query_parts) == 1:
+            return None  # Both queries don't have a WHERE clause
+        
+        initial_conditions = set(initial_query_parts[1].strip().split(' and '))
+        new_conditions = set(new_query_parts[1].strip().split(' and '))
+        added_conditions = new_conditions - initial_conditions
+        
+        if not added_conditions:
+            return None  # There are no added conditions
+        
+        return ' and '.join(added_conditions)
 
+
+
+    def why_change(self,initial,new):
+        print("\nInitial_query:\n",initial)
+        print("\nNew_query:\n",new)
+
+        updated_clause = self.get_updated_clause(initial, new)
+        print(f'\nDifference in New SQL Query: ', updated_clause)
+        updated_clause = "Difference in New SQL Query: \n" + updated_clause
         # Compare the execution plans
-        diffs = sql_metadata.diff(plan1, plan2)
+        self.db = DBConnection()
+        initalPlan = self.db.execute(self.initial_query)
+        newPlan = self.db.execute(self.new_query)
+        print("\n\n\nInitial Plan:\n",initalPlan)
+        print("\nNew Plan:\n",newPlan)
 
-        # Describe the changes in the execution plans
-        description = "During the data exploration, we made changes to the WHERE clause in the SQL query, which resulted in changes to the execution plan. In the original plan, the query used a {join_type} to combine the data from different tables. However, in the updated plan, the query now uses a {new_join_type} to combine the data. This change in the join type is due to the changes made in the WHERE clause of the SQL query, which affected the optimizer's decision on the most efficient way to retrieve the data.".format(join_type=diffs['join_type'], new_join_type=diffs['new_join_type'])
+        # Compare the execution plans and identify any differences
+        if initalPlan == newPlan:
+            print('\n\nExecution plans are the same')
+            
+        else:
+            print("\n\n")
+            string_plan = "\n\nDifference in New Query Plan:"
+            for i in range(len(initalPlan)):
+                if initalPlan[i] != newPlan[i]:
+                    print(f'\nStep: {i}')
+                    print(f'  Initial Plan:: {initalPlan[i]}')
+                    print(f'  New Plan: {newPlan[i]}')
+                    string_plan += f'\nStep {i}:\n' + f'  Initial Plan: {initalPlan[i]}\n' + f'  New Plan: {newPlan[i]}\n'
+         
+    
+        self.analysis_text.insert('1.0', string_plan)
+        self.analysis_text.insert('1.0', updated_clause)
+        self.analysis_text.config(state=DISABLED)
 
-        print(description)
+        # diffs = sql_metadata.diff(plan1, plan2)
+
+        # # Describe the changes in the execution plans
+        # description = "During the data exploration, we made changes to the WHERE clause in the SQL query, which resulted in changes to the execution plan. In the original plan, the query used a {join_type} to combine the data from different tables. However, in the updated plan, the query now uses a {new_join_type} to combine the data. This change in the join type is due to the changes made in the WHERE clause of the SQL query, which affected the optimizer's decision on the most efficient way to retrieve the data.".format(join_type=diffs['join_type'], new_join_type=diffs['new_join_type'])
+        
 
 
 

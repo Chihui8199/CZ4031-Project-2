@@ -35,12 +35,12 @@ class DBConnection:
             explain_query = "EXPLAIN " + query
             self.cur.execute(explain_query)
             query_plan = self.cur.fetchall()
-            print("Query Plan Returned:", query_plan)
+            # print("Query Plan Returned:", query_plan)
             # If adding results to the app
             # self.cur.execute(query)
             # query_results = self.cur.fetchall()
             # return query_results
-            return
+            return query_plan
         except Exception as e:
             pass
         
