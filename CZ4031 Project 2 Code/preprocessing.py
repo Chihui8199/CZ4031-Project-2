@@ -29,11 +29,14 @@ class DBConnection:
 
     def execute(self, query):
         try:
+            # It is read from bottom to top
+            # where the bottommost node represents the initial data source(s) 
+            # and the topmost node represents the final output of the query.
             explain_query = "EXPLAIN " + query
             self.cur.execute(explain_query)
             query_plan = self.cur.fetchall()
             print("Query Plan Returned:", query_plan)
-            #If adding results
+            # If adding results to the app
             # self.cur.execute(query)
             # query_results = self.cur.fetchall()
             # return query_results
