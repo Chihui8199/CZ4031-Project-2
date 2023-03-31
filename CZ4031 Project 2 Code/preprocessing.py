@@ -9,7 +9,7 @@ class Preprocessing:
         self.db = DBConnection()
         query="select * from customer C, orders O where C.c_custkey = O.o_custkey"
         print("THIS IS THE DB OBJECT: ", self.db.execute(query=query))
-        self.db.createGraph()
+        # self.db.createGraph()
         
 class DBConnection:
     def __init__(self, db_config_path: str = 'config.json'):
@@ -48,6 +48,7 @@ class DBConnection:
         except Exception as e:
             pass
 
+    #Minimal grph
     def createGraph(self):
         # Load query plan from JSON file
         with open('query_plan.json') as f:
