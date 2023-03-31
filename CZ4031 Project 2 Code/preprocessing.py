@@ -4,16 +4,43 @@ Contains code for preprocessing user inputs and data used in algorithm
 
 import json
 import psycopg2
+import os
+from graphviz import Digraph
 
-class Preprocessing:    
+class GraphGenerator():
+    def __init__(self, qep_json):
+        self.qep = qep_json
+        self.graph = Digraph()
+
+    def build_dot(self, qep, parent=None, seq=1):
+        node_id = str(hash(str(qep)))
+        label = qep['Node Type']
+        if 'Relation Name' in qep:
+            label += f"\nRelation Name: {qep['Relation Name']}"
+        self.graph.node(node_id, label)
+        if parent is not None:
+            self.graph.edge(parent, node_id)
+        if 'Plans' in qep:
+            for i, plan in enumerate(qep['Plans']):
+                self.build_dot(plan, node_id, i+1)
+
+    def generate_graph(self, format='png', view=True):
+        self.build_dot(self.qep)
+        self.graph.render('qep_graph', format=format, view=view)
+
+class Preprocessing:
     def __init__(self):
-        print("INITIALIZING PREPROCESSING CLASS")
         self.db = DBConnection()
-        print("THIS IS THE DB OBJECT: ", self.db.execute(query="select * from customer C, orders O where C.c_custkey = O.o_custkey"))
+
+    def get_query_plan(self, sql_query):
+        """ Generate QEP of an SQL Query """
+        result = self.db.execute("EXPLAIN (FORMAT JSON) "+sql_query)
+        return result[0][0][0]["Plan"]
+
 
 class DBConnection:
     def __init__(self, db_config_path: str = 'config.json'):
-        import os
+       
         dir_path = os.path.dirname(os.path.realpath(__file__))
         db_config_path = os.path.join(dir_path, "config.json")
 
@@ -29,18 +56,8 @@ class DBConnection:
 
     def execute(self, query):
         try:
-            # It is read from bottom to top
-            # where the bottommost node represents the initial data source(s) 
-            # and the topmost node represents the final output of the query.
-            explain_query = "EXPLAIN " + query
-            self.cur.execute(explain_query)
-            query_plan = self.cur.fetchall()
-            print("Query Plan Returned:", query_plan)
-            # If adding results to the app
-            # self.cur.execute(query)
-            # query_results = self.cur.fetchall()
-            # return query_results
-            return
+            self.cur.execute(query)
+            query_results = self.cur.fetchall()
+            return query_results
         except Exception as e:
             pass
-        
