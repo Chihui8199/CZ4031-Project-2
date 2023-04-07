@@ -12,6 +12,13 @@ class Preprocessing:
     def __init__(self):
         self.db = DBConnection()
 
+    def get_query_results(self, sql_query):
+        output = self.validate(sql_query) 
+        query_res = self.db.execute(sql_query)
+        # print(query_res)
+        return query_res
+    
+    
     def get_query_plan(self, sql_query):
         """
         Generates a Query Execution Plan (QEP) for a given SQL query.
@@ -31,14 +38,14 @@ class Preprocessing:
         # CALL on front end raise value error 
         
         output = self.validate(sql_query) 
-        query_results = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
-        query_plan = {}
+        query_plan_res = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
         try:
-            query_plan = query_results[0][0][0]["Plan"]
+            query_plan_res = query_plan_res[0][0][0]["Plan"]
         except Exception as e:
+            query_plan_res = {}
             pass
         
-        return query_plan
+        return query_plan_res
 
     def validate(self, query):
         """
@@ -143,7 +150,8 @@ class DBConnection:
         """
         self.cur.execute(query)
         try:
-            self.cur.fetchone(query)
-        except:
+            self.cur.fetchone()
+        except Exception as e:
+            print (e)
             return False
         return True

@@ -22,7 +22,8 @@ class Annotation():
             for i, plan in enumerate(qep['Plans']):
                 self.build_dot(plan, node_id, i+1)
 
-    def generate_graph(self, format='png', view=True):
+    def generate_graph(self, query_plan, format='png', view=True):
         self.build_dot(self.qep)
         self.graph.attr('node', shape='box')  # set the shape of the nodes
-        self.graph.render('qep_graph', format=format, view=view)
+        self.graph.render(query_plan, format=format, view=view)
+    
