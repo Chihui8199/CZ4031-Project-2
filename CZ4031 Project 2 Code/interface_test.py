@@ -141,7 +141,6 @@ class Application(ttk.Window):
         value2.trace('w', update_query2)
         self.query_2.insert('1.0',"select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey")
 
-        #TODO: fix the submit button, only submit once
         self.submit_button = ttk.Button (self.text_container2, text="Submit", command=self.submit_queries , bootstyle="secondary")
         self.submit_button.pack(pady=20)
 
@@ -194,11 +193,6 @@ class Application(ttk.Window):
 
 
     def submit_queries(self):
-            """
-            Starts the whole analysis process of the given query.
-
-            Trigger: By button click or shortcut key [F5]
-            """
             # Disable button to prevent spamming
             self.submit_button.configure(state=DISABLED)
 
@@ -212,19 +206,71 @@ class Application(ttk.Window):
             self.new_query = self.new_query.replace('\n', ' ')
             
             self.why_change(self.initial_query,self.new_query)
+            self.submit_button.config(state="normal")
 
 
     # Compare the execution plans and identify any differences
     def comparePlan(self, initialPlan, newPlan, added_analysis_text):
         textToReturn = ""
         added_analysis_text = added_analysis_text + "\n================================================================== \n"
-        #TODO: when initial plan > new Plan
+        
         print('initial: ', len(initialPlan))
         print('new: ', len(newPlan))
         if (len(initialPlan) <= len(newPlan)):
-            print("i should be here")
             added_analysis_text =  added_analysis_text + str(initialPlan['Node Type']) 
             added_analysis_text =  added_analysis_text + "\n" + str("‾‾" * len(initialPlan['Node Type']))
+
+            for i in range(len(initialPlan)):
+                
+                initialKey = list(initialPlan.keys())[i]
+                initialValue = initialPlan[initialKey]
+                print("-----------------------------------------------------------")
+                print("Initial key:", initialKey)
+                print("Initial value:" , initialValue)
+
+                
+
+                for j in range(len(newPlan)):
+                    newKey = list(newPlan.keys())[j]
+                    newValue = newPlan[newKey]
+                    print("New key:", newKey)
+                    print("New value:" , newValue, "\n")
+                    
+                    # if they both have same keys, compare them
+                    if newKey == initialKey: 
+
+                        if isinstance(newValue, list):
+                            print("Recursively going through Plans here: \n")
+                            # added_analysis_text = added_analysis_text + "\n ================================================================== \n"
+                            for dicts_count in range(len(newPlan['Plans'])):
+                                print("Comparing: \n", initialPlan['Plans'][dicts_count], "\n ==WITH== \n", newPlan['Plans'][dicts_count])
+                                textToReturn = self.comparePlan(initialPlan['Plans'][dicts_count], newPlan['Plans'][dicts_count], added_analysis_text)
+                        
+                        if newValue != initialValue and newKey == "Startup Cost":
+                            startupString = self.startupCostCompare(initialValue, newValue)
+                            added_analysis_text = added_analysis_text + str(startupString)
+                        
+                        if newValue != initialValue and newKey == "Total Cost":
+                            totalString = self.totalCostCompare(initialValue, newValue)
+                            added_analysis_text = added_analysis_text + str(totalString)
+
+                        if newValue != initialValue and newKey == "Plan Rows":
+                            planRowString = self.planRowsCompare(initialValue, newValue)
+                            added_analysis_text = added_analysis_text + str(planRowString)
+                        
+                        if newValue != initialValue and newKey != "Plans":
+                            # added_analysis_text = added_analysis_text + "\n\n" + newKey + " of the initial query has changed from " + str(initialValue) + " to " + str(newValue) + " in the new query." 
+                            textToReturn = added_analysis_text
+                        
+
+                        break
+        
+            return textToReturn
+
+        #TODO: when initial plan > new Plan
+        else:
+            added_analysis_text =  added_analysis_text + str(newPlan['Node Type']) 
+            added_analysis_text =  added_analysis_text + "\n" + str("‾‾" * len(newPlan['Node Type']))
 
             for i in range(len(initialPlan)):
                 
@@ -265,10 +311,8 @@ class Application(ttk.Window):
                             added_analysis_text = added_analysis_text + str(planRowString)
                         
                         if newValue != initialValue and newKey != "Plans":
-                            print("%%%%%%hefkwofjwiofnweo")
-                            added_analysis_text = added_analysis_text + "\n\n" + newKey + " of the initial query has changed from " + str(initialValue) + " to " + str(newValue) + " in the new query." 
+                            # added_analysis_text = added_analysis_text + "\n\n" + newKey + " of the initial query has changed from " + str(initialValue) + " to " + str(newValue) + " in the new query." 
                             textToReturn = added_analysis_text
-                            # print(textToReturn)
                         
 
                         break
@@ -277,6 +321,7 @@ class Application(ttk.Window):
         
 
     def why_change(self,initial,new):
+
         print("\nInitial_query:\n",initial)
         print("\nNew_query:\n",new)
         preprocessor = preprocessing.Preprocessing()
@@ -284,9 +329,12 @@ class Application(ttk.Window):
 
         updated_clause = self.get_updated_clause(initial, new)
         if updated_clause == None:
+            self.analysis_text.config(state="normal")
+            self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
             self.analysis_text.insert('1.0', "SQL Queries are the same, please ensure they are different!")
             self.analysis_text.config(state=DISABLED)
         else:
+            
             print(f'\nDifference in New SQL Query: ', updated_clause)
             added_analysis_text = "Difference in New SQL Query: \n" + updated_clause + "\n"
 
@@ -303,28 +351,142 @@ class Application(ttk.Window):
             # compare plans
             if initialPlan == newPlan:
                 print('\n\nExecution plans are the same') 
+                self.analysis_text.config(state="normal")
+                self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
+                self.analysis_text.insert('1.0', "The SQL Queries have the same query plan!")
+                self.analysis_text.config(state=DISABLED)
             else:
                 added_analysis_text = self.comparePlan(initialPlan, newPlan, added_analysis_text)
+                self.analysis_text.config(state="normal")
+                self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
                 self.analysis_text.insert('1.0', added_analysis_text)
-                self.analysis_text.config(state=DISABLED)
+                self.analysis_text.config(state=DISABLED) 
 
      
     def get_updated_clause(self, initial_query, new_query):
-        initial_query_parts = initial_query.split('where')
-        new_query_parts = new_query.split('where')
-        
-        if len(initial_query_parts) == 1 or len(new_query_parts) == 1:
-            return None  # Both queries don't have a WHERE clause
-        
-        initial_conditions = set(initial_query_parts[1].strip().split(' and '))
-        new_conditions = set(new_query_parts[1].strip().split(' and '))
-        added_conditions = new_conditions - initial_conditions
-        
-        if not added_conditions:
-            return None  # There are no added conditions
-        
-        return ' and '.join(added_conditions)
+        difference = ""
 
+        pattern = r"(WHERE .*)"
+        where_match_initial = re.search(pattern, initial_query, re.IGNORECASE)
+        where_match_new = re.search(pattern, new_query, re.IGNORECASE)
+
+        # if where clauses exist for both
+        if where_match_initial and where_match_new:
+            where_clause_initial = where_match_initial.group(1)
+            print("\n\nInitial:\n", where_clause_initial)
+            
+            where_clause_new = where_match_new.group(1)
+            print("\n\nNew:\n", where_clause_new)
+ 
+            # returns the part that starts with group by for both initial and new
+            pattern = r"(GROUP BY .*)"
+            groupby_match_initial = re.search(pattern, where_clause_initial, re.IGNORECASE)
+            groupby_match_new = re.search(pattern, where_clause_new, re.IGNORECASE)
+
+            # returns the part that starts with order by for both initial and new
+            pattern = r"(ORDER BY .*)"
+            orderby_match_initial = re.search(pattern, where_clause_initial, re.IGNORECASE)
+            orderby_match_new = re.search(pattern, where_clause_new, re.IGNORECASE)
+
+            # returns the part that starts with limit for both initial and new
+            pattern = r"(LIMIT .*)"
+            limit_match_initial = re.search(pattern, where_clause_initial, re.IGNORECASE)
+            limit_match_new = re.search(pattern, where_clause_new, re.IGNORECASE)
+
+
+            # checking if groupby, orderby, limit clauses exists in initial where clause, if exists, remove the them from where clause
+            if groupby_match_initial:
+                where_clause_initial = where_clause_initial[:groupby_match_initial.start()]
+
+            elif orderby_match_initial:
+                where_clause_initial = where_clause_initial[:orderby_match_initial.start()]
+
+            elif limit_match_initial:
+                where_clause_initial = where_clause_initial[:limit_match_initial.start()]
+
+
+            # checking if groupby, orderby, limit clauses exists in new where clause, if exists, remove the them from where clause
+            if groupby_match_new:
+                where_clause_new = where_clause_new[:groupby_match_new.start()]
+                
+            elif orderby_match_new:
+                where_clause_new = where_clause_new[:orderby_match_new.start()]
+                
+            elif limit_match_new:
+                where_clause_new = where_clause_new[:limit_match_new.start()]
+                
+
+            print("\n\nInitial Where Clause:\n", where_clause_initial)
+            print("\n\nNew Where Clause:\n", where_clause_new)
+
+
+            if (where_clause_new == where_clause_initial):
+                print("Where clause is the same")
+
+            else:
+                print("Different")
+                
+                initial_conditions = set(map(str.strip, where_clause_initial.split('and')))
+                new_conditions = set(map(str.strip, where_clause_new.split('and')))
+
+               
+                # Getting the difference 
+
+                # if new query is shorter than inital query
+                if len(new_query) > len(initial_query):
+                    diff_conditions = new_conditions - initial_conditions
+                # if new query is longer than inital query
+                else:
+                    diff_conditions = initial_conditions - new_conditions
+
+                print("\ninitial ", initial_conditions)
+                print("\nnew ", new_conditions)
+                print("\nDIFF ", diff_conditions)
+                difference = difference + str(diff_conditions) + "in the WHERE clause"
+
+                
+
+
+            # if groupby_match_initial or groupby_match_new:
+            #     groupby_clause_initial = groupby_match_initial.group(1)
+            #     print("\n\nInitial:\n", groupby_clause_initial)
+
+            #     groupby_clause_new = groupby_match_new.group(1)
+            #     print("\n\nNew:\n", groupby_clause_new)
+
+            #     if (groupby_clause_new == groupby_clause_initial):
+            #         print("Group By clause is the same")
+
+
+
+            # if orderby_match_initial:
+            #     orderby_clause_initial = orderby_match_initial.group(1)
+            #     print("\n\nInitial:\n", orderby_clause_initial)
+
+            #     orderby_clause_new = orderby_match_new.group(1)
+            #     print("\n\nNew:\n", orderby_clause_new)
+
+            #     if (orderby_clause_new == orderby_clause_initial):
+            #         print("Order By clause is the same")
+
+
+            # if limit_match_initial:
+            #     limit_clause_initial = limit_match_initial.group(1)
+            #     print("\n\nInitial:\n", limit_clause_initial)
+
+            #     limit_clause_new = limit_match_new.group(1)
+            #     print("\n\nNew:\n", limit_clause_new)
+
+            #     if (limit_clause_new == limit_match_initial):
+            #         print("Limit clause is the same")
+            
+            
+            
+        else:
+            print("WHERE clause not found.")
+
+    
+        return difference
 
 
 
