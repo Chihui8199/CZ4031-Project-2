@@ -372,10 +372,11 @@ class Application(ttk.Window):
 
         # if where clauses exist for both
         if where_match_initial and where_match_new:
-            where_clause_initial = where_match_initial.group(1)
+            # removing the first 5 characters (where)
+            where_clause_initial = where_match_initial.group(1)[6:]
             print("\n\nInitial:\n", where_clause_initial)
             
-            where_clause_new = where_match_new.group(1)
+            where_clause_new = where_match_new.group(1)[6:]
             print("\n\nNew:\n", where_clause_new)
  
             # returns the part that starts with group by for both initial and new
