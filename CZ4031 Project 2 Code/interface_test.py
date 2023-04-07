@@ -9,6 +9,8 @@ import sqlparse
 from preprocessing import *
 # import pyodbc
 import sql_metadata
+import preprocessing
+import json
 
 # FONT SETTINGS
 FONT = "Palatino"
@@ -67,10 +69,21 @@ class Application(ttk.Window):
 
         # Left window -----------------------------------------------------------------------------------
 
-        # self.initial_query_label = ttk.Label(self.window_container_left, text="Initial Query:", background="#2C3143")
-        # self.initial_query_label.pack()
+        queries_text = {
+            "Query 1": "select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey",
+            "Query 2": "select * from customer C, orders O where C.c_custkey = O.o_custkey",
+            "Query 3": "SELECT col1, AVG(col2) FROM table3 GROUP BY col1;",
+            "Query 4": "UPDATE table4 SET col1='new_value' WHERE col2='value';",
+            "Query 5": "INSERT INTO table5 (col1, col2) VALUES ('value1', 'value2');",
+            "Query 6": "DELETE FROM table6 WHERE col1='value';",
+            "Query 7": "SELECT * FROM table7 WHERE col1 IN (SELECT col1 FROM table8 WHERE col2='value');"
+        }
+        queries_selection = list(queries_text.keys())
+
+
 
         # Initial Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         self.sql_container1 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.sql_container1.pack(pady = 10, fill=tk.BOTH)
 
@@ -78,19 +91,29 @@ class Application(ttk.Window):
         my_label.configure(background='#2C3143', foreground='white')
         my_label.pack(padx=10,pady=10,anchor = NW, side=LEFT)
 
-        queries_selection = ["Query 1","Query 2","Query 3", "Query 4","Query 5","Query 6", "Query 7"]
-        value = tk.StringVar()
-        self.example_query = ttk.OptionMenu(self.sql_container1, value, queries_selection[0], *queries_selection)
+        value1 = tk.StringVar()
+        self.example_query = ttk.OptionMenu(self.sql_container1, value1, queries_selection[0], *queries_selection)
         self.example_query.pack(padx=10,pady=10,anchor = NE, side = RIGHT)
 
         self.text_container1 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.text_container1.pack()
 
         self.query_1 = Text(self.text_container1, width=70, height=10)
-        self.query_1.insert('1.0',"select * from customer C, orders O where C.c_custkey = O.o_custkey")
         self.query_1.pack(pady=10, padx=10)
 
+        def update_query1(*args):
+            selected_query = value1.get()
+            selected_text = queries_text[selected_query]
+            self.query_1.delete('1.0', tk.END)
+            self.query_1.insert(tk.END, selected_text)
+
+        value1.trace('w', update_query1)
+        self.query_1.insert('1.0',"select * from customer C, orders O where C.c_custkey = O.o_custkey")
+
+
+
         # New Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         self.sql_container2 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.sql_container2.pack(pady = 10, fill=tk.BOTH)
 
@@ -98,18 +121,27 @@ class Application(ttk.Window):
         my_label.configure(background='#2C3143', foreground='white')
         my_label.pack(padx=10,pady=10,anchor = NW, side=LEFT)
         
-        queries_selection = ["Query 1","Query 2","Query 3", "Query 4","Query 5","Query 6", "Query 7"]
-        value = tk.StringVar()
-        self.example_query = ttk.OptionMenu(self.sql_container2, value, queries_selection[0], *queries_selection)
+        # queries_selection = list(queries_text.keys())
+        value2 = tk.StringVar()
+        self.example_query = ttk.OptionMenu(self.sql_container2, value2, queries_selection[0], *queries_selection)
         self.example_query.pack(padx=10,pady=10,anchor = NE, side = RIGHT)
 
         self.text_container2 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.text_container2.pack()
 
         self.query_2 = Text(self.text_container2, width=70, height=10)
-        self.query_2.insert('1.0',"select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey  ")
         self.query_2.pack(pady=10, padx=10)
 
+        def update_query2(*args):
+            selected_query = value2.get()
+            selected_text = queries_text[selected_query]
+            self.query_2.delete('1.0', tk.END)
+            self.query_2.insert(tk.END, selected_text)
+
+        value2.trace('w', update_query2)
+        self.query_2.insert('1.0',"select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey")
+
+        #TODO: fix the submit button, only submit once
         self.submit_button = ttk.Button (self.text_container2, text="Submit", command=self.submit_queries , bootstyle="secondary")
         self.submit_button.pack(pady=20)
 
@@ -182,7 +214,101 @@ class Application(ttk.Window):
             self.why_change(self.initial_query,self.new_query)
 
 
+    # Compare the execution plans and identify any differences
+    def comparePlan(self, initialPlan, newPlan, added_analysis_text):
+        textToReturn = ""
+        added_analysis_text = added_analysis_text + "\n================================================================== \n"
+        #TODO: when initial plan > new Plan
+        print('initial: ', len(initialPlan))
+        print('new: ', len(newPlan))
+        if (len(initialPlan) <= len(newPlan)):
+            print("i should be here")
+            added_analysis_text =  added_analysis_text + str(initialPlan['Node Type']) 
+            added_analysis_text =  added_analysis_text + "\n" + str("‾‾" * len(initialPlan['Node Type']))
 
+            for i in range(len(initialPlan)):
+                
+                initialKey = list(initialPlan.keys())[i]
+                initialValue = initialPlan[initialKey]
+                print("-----------------------------------------------------------")
+                print("Initial key:", initialKey)
+                print("Initial value:" , initialValue)
+
+                
+
+                for j in range(len(newPlan)):
+                    newKey = list(newPlan.keys())[j]
+                    newValue = newPlan[newKey]
+                    print("New key:", newKey)
+                    print("New value:" , newValue, "\n")
+                    
+                    # if they both have same keys, compare them
+                    if newKey == initialKey: 
+
+                        # if isinstance(newValue, list):
+                        #     print("Recursively going through Plans here: \n")
+                        #     # added_analysis_text = added_analysis_text + "\n ================================================================== \n"
+                        #     for dicts_count in range(len(newPlan['Plans'])):
+                        #         print("Comparing: \n", initialPlan['Plans'][dicts_count], "\n ==WITH== \n", newPlan['Plans'][dicts_count])
+                        #         textToReturn = self.comparePlan(initialPlan['Plans'][dicts_count], newPlan['Plans'][dicts_count], added_analysis_text)
+                        
+                        if newValue != initialValue and newKey == "Startup Cost":
+                            startupString = self.startupCostCompare(initialValue, newValue)
+                            added_analysis_text = added_analysis_text + str(startupString)
+                        
+                        if newValue != initialValue and newKey == "Total Cost":
+                            totalString = self.totalCostCompare(initialValue, newValue)
+                            added_analysis_text = added_analysis_text + str(totalString)
+
+                        if newValue != initialValue and newKey == "Plan Rows":
+                            planRowString = self.planRowsCompare(initialValue, newValue)
+                            added_analysis_text = added_analysis_text + str(planRowString)
+                        
+                        if newValue != initialValue and newKey != "Plans":
+                            print("%%%%%%hefkwofjwiofnweo")
+                            added_analysis_text = added_analysis_text + "\n\n" + newKey + " of the initial query has changed from " + str(initialValue) + " to " + str(newValue) + " in the new query." 
+                            textToReturn = added_analysis_text
+                            # print(textToReturn)
+                        
+
+                        break
+        
+            return textToReturn
+        
+
+    def why_change(self,initial,new):
+        print("\nInitial_query:\n",initial)
+        print("\nNew_query:\n",new)
+        preprocessor = preprocessing.Preprocessing()
+
+
+        updated_clause = self.get_updated_clause(initial, new)
+        if updated_clause == None:
+            self.analysis_text.insert('1.0', "SQL Queries are the same, please ensure they are different!")
+            self.analysis_text.config(state=DISABLED)
+        else:
+            print(f'\nDifference in New SQL Query: ', updated_clause)
+            added_analysis_text = "Difference in New SQL Query: \n" + updated_clause + "\n"
+
+            initialPlan = preprocessor.get_query_plan(self.initial_query)
+            newPlan = preprocessor.get_query_plan(self.new_query)
+
+            # print plans in readable format
+            initial_dict = json.dumps(initialPlan,indent=4)
+            print("\n\n\nInitial Plan:\n", initial_dict)
+
+            new_dict = json.dumps(newPlan,indent=4)
+            print("\n\n\nNew Plan:\n", new_dict)
+
+            # compare plans
+            if initialPlan == newPlan:
+                print('\n\nExecution plans are the same') 
+            else:
+                added_analysis_text = self.comparePlan(initialPlan, newPlan, added_analysis_text)
+                self.analysis_text.insert('1.0', added_analysis_text)
+                self.analysis_text.config(state=DISABLED)
+
+     
     def get_updated_clause(self, initial_query, new_query):
         initial_query_parts = initial_query.split('where')
         new_query_parts = new_query.split('where')
@@ -201,153 +327,32 @@ class Application(ttk.Window):
 
 
 
-    def why_change(self,initial,new):
-        print("\nInitial_query:\n",initial)
-        print("\nNew_query:\n",new)
 
-        updated_clause = self.get_updated_clause(initial, new)
-        print(f'\nDifference in New SQL Query: ', updated_clause)
-        updated_clause = "Difference in New SQL Query: \n" + updated_clause
-        # Compare the execution plans
-        self.db = DBConnection()
-        initalPlan = self.db.execute(self.initial_query)
-        newPlan = self.db.execute(self.new_query)
-        print("\n\n\nInitial Plan:\n",initalPlan)
-        print("\nNew Plan:\n",newPlan)
 
-        # Compare the execution plans and identify any differences
-        if initalPlan == newPlan:
-            print('\n\nExecution plans are the same')
-            
+
+    def startupCostCompare(self, initialCost, newCost):
+        startupString = ""
+        if initialCost > newCost:
+            startupString = "\n" + "Reduced Startup Cost: The Startup Cost of the new plan has been reduced from " + str(initialCost) + " to " + str(newCost) +" . This means that the new plan requires less initial resources to start up and execute, making it faster." + "\n"
         else:
-            print("\n\n")
-            string_plan = "\n\nDifference in New Query Plan:"
-            for i in range(len(initalPlan)):
-                if initalPlan[i] != newPlan[i]:
-                    print(f'\nStep: {i}')
-                    print(f'  Initial Plan:: {initalPlan[i]}')
-                    print(f'  New Plan: {newPlan[i]}')
-                    string_plan += f'\nStep {i}:\n' + f'  Initial Plan: {initalPlan[i]}\n' + f'  New Plan: {newPlan[i]}\n'
-         
-    
-        self.analysis_text.insert('1.0', string_plan)
-        self.analysis_text.insert('1.0', updated_clause)
-        self.analysis_text.config(state=DISABLED)
-
-        # diffs = sql_metadata.diff(plan1, plan2)
-
-        # # Describe the changes in the execution plans
-        # description = "During the data exploration, we made changes to the WHERE clause in the SQL query, which resulted in changes to the execution plan. In the original plan, the query used a {join_type} to combine the data from different tables. However, in the updated plan, the query now uses a {new_join_type} to combine the data. This change in the join type is due to the changes made in the WHERE clause of the SQL query, which affected the optimizer's decision on the most efficient way to retrieve the data.".format(join_type=diffs['join_type'], new_join_type=diffs['new_join_type'])
-        
+            startupString = "\n" + "Increased Startup Cost: The Startup Cost of the new plan has been increased from " + str(initialCost) + " to " + str(newCost) +" . This means that the new plan requires more initial resources to start up and execute, making it slower." + "\n"           
+        return startupString
 
 
+    def totalCostCompare(self, initialCost, newCost):
+        totalString = ""
+        if initialCost > newCost:
+            totalString = "\n" + "Reduced Total Cost: The Total Cost of the new plan has been reduced from " + str(initialCost) + " to " + str(newCost) +" . This means that the overall cost of executing the query is lower in the new plan, which should result in faster execution times." + "\n"
+        else:
+            totalString = "\n" + "Increased Total Cost: The Total Cost of the new plan has been increased from " + str(initialCost) + " to " + str(newCost) +" . This means that the overall cost of executing the query is higher in the new plan, which should result in slower execution times." + "\n"
+        return totalString
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        # my_label = Label(self.analysis_container, text="New Query:", font=("Helvetica", 18))
-        # my_label.configure(background='#2C3143', foreground='white')
-        # my_label.pack(pady=20)
-        # my_text = Text(self.analysis_container, width=70, height=10)
-        # my_text.pack(pady=[10,80], padx=10)
-
-
-        # self.sql_output_container = ttk.Frame(self.tabs_holders)
-        # self.sql_output_container.pack(fill=tk.BOTH)
-        # self.tabs_holders.add(self.sql_output_container, text="SQL Output (if applicable)")
-
-        # # Create frame for user input
-        # self.instruction_label = ttk.Label(self.query_container, text="Enter your sql query below and click button to analyze (or use shortcut: F5 key)", font=FONT_BOLD)
-        # # self.query_entry = ScrolledText(master=self.query_container, autohide=True)
-        # # self.analyze_btn = ttk.Button(self.query_container, text="ANALYZE QUERY", command=self.analyze_query, bootstyle="PRIMARY")
-        # # Bind query entry to F5 Shortcut key
-        # self.bind_all("<F5>", self.analyze_query)
-        # self.query_option = ttk.Checkbutton(self.query_container, text="Return SQL output with analysis", variable=self.query_option_tracker_sql_output, onvalue=1, offvalue=0)
-        # # Pack all elements for user input
-        # self.instruction_label.pack(fill=tk.X, padx=20, pady=10)
-        # self.query_entry.pack(fill=tk.BOTH,padx=20, pady=10)
-        # self.query_option.pack(side=tk.LEFT, padx=20, pady=10)
-        # self.analyze_btn.pack(side=tk.RIGHT, fill=tk.X, padx=20, pady=10)
-        
-        # # Create frame for tree output
-        # self.left_annotated_sql_frame = ttk.Frame(self.tree_output_container)
-        # # self.left_annotated_sql_query_display = ScrolledText(master=self.left_annotated_sql_frame, autohide=True, state=DISABLED)
-        # # self.left_annotated_sql_analysis_display = ScrolledText(master=self.left_annotated_sql_frame, autohide=True, state=DISABLED)
-        # self.right_tree_frame = ttk.Frame(self.tree_output_container)
-        # self.qep_tooltip = ttk.Label(self.right_tree_frame, text="Click on or hover over the nodes to view analysis information.", font=FONT_BOLD)
-        # # self.qep_tree =  QEPTreeVisualizer(self.right_tree_frame, self.left_annotated_sql_query_display, self.left_annotated_sql_analysis_display)
-        # # Pack all elements for tree output
-        # self.left_annotated_sql_frame.pack(side=LEFT) 
-        # self.left_annotated_sql_query_display.pack(side=tk.TOP, fill=tk.X)
-        # self.left_annotated_sql_analysis_display.pack(side=tk.BOTTOM,fill=tk.X)
-        # self.right_tree_frame.pack(side=LEFT, padx=20, fill=tk.BOTH) 
-        # self.qep_tooltip.pack(fill=tk.X, pady=5, side=TOP)
-        # self.qep_tree.pack(fill=tk.X, padx=20, anchor=CENTER)
-        
-        # Add default labels
-        # ttk.Label(self.sql_output_container, text = "Please select option to display SQL output in [Query] tab.", font=FONT_BOLD).pack(fill=tk.X, padx=20, pady=10, anchor=CENTER)
-        # for node_type, color in NODE_COLORS.items():
-        #     self.left_annotated_sql_query_display.text.tag_configure(node_type, background=color[0], foreground=color[1])
-        # self.left_annotated_sql_query_display.text.tag_configure('OTHER', background='#ff9800', foreground='black')
-
-        # self.master = master
-       
-        # root = tk.Tk()
-        # root.configure(bg="red")
-        # root.title("CZ4031 Project 2")
-        # # root.geometry("1151x631")
-        # #setting window size
-        
-        # # width=1200
-        # # height=800
-        # root.geometry("1280x800")
-        
-
-        # self.window_container = ttk.Frame(self)
-        
-        # self.window_container.pack(fill=tk.BOTH)
-        # self.window_container.configure(bg='#ADD8E6')
-        # self.app_label = ttk.Label(self.window_container, text="CZ4031 QEP Analyzer (2022)", font=FONT_TITLE, anchor=CENTER)
-        # self.app_label.pack(fill=tk.X, pady=[10,0])
-
-        # self.input_container = ttk.Frame(self)
-        # self.input_container.pack(side=LEFT)
-        # self.input_container.inputs()
-
-    # def inputs(self):
-
-    #     def submit():
-    #         input_1 = entry_1.get()
-    #         input_2 = entry_2.get()
-    #         print("Input 1:", input_1)
-    #         print("Input 2:", input_2)    
-         
-        # Create label and entry for first input
-        # label_1 = tk.Label(root, text="Input 1:")
-        # label_1.pack()
-        # entry_1 = tk.Entry(root)
-        # entry_1.pack()
-
-        # # Create label and entry for second input
-        # label_2 = tk.Label(root, text="Input 2:")
-        # label_2.pack()
-        # entry_2 = tk.Entry(root)
-        # entry_2.pack()
-
-        # # Create submit button
-        # submit_button = tk.Button(root, text="Submit", command=submit)
-        # submit_button.pack()
+    def planRowsCompare(self, initialCost, newCost):
+        planRowString = ""
+        if initialCost > newCost:
+            planRowString = "\n" + "Reduced Plan Rows: The Plan Rows of the new plan has been reduced from " + str(initialCost) + " to " + str(newCost) +" . This means that the new plan is expected to return fewer rows, which can result in faster execution times." + "\n"
+        else:
+            planRowString = "\n" + "Increased Plan Rows: The Plan Rows of the new plan has been increased from " + str(initialCost) + " to " + str(newCost) +" . This means that the new plan is expected to return more rows, which can result in slower execution times." + "\n"
+        return planRowString
 
