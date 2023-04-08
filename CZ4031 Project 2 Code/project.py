@@ -35,13 +35,15 @@ if __name__ == '__main__':
             print("Annotating.........")
             annotator = annotation.Annotation(query_plan1)
             print("Generate Graph.........")
-            g = annotator.generate_graph("query_plan1")
+            annotator.generate_graph("img/query_plan1")
+            
         if query_plan2!= {}:
             # print("printing queryplan", query_plan)
             print("Annotating.........")
             annotator = annotation.Annotation(query_plan2)
             print("Generate Graph.........")
-            g = annotator.generate_graph("query_plan2")
+            annotator.generate_graph("img/query_plan2")
+            
         
         #app = interface.QEPAnalyser(preprocessor, annotator)
     except Exception as e:

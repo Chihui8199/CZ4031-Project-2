@@ -25,5 +25,5 @@ class Annotation():
     def generate_graph(self, query_plan, format='png', view=True):
         self.build_dot(self.qep)
         self.graph.attr('node', shape='box')  # set the shape of the nodes
-        self.graph.render(query_plan, format=format, view=view)
+        self.graph.render(query_plan, format=format, view=False)
     

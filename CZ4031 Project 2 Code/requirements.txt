@@ -4,3 +4,5 @@ tkinter
 ttkbootstrap
 sqlparse
 pyodbc
+graphviz
+# https://graphviz.org/download/ need to add this in read me file

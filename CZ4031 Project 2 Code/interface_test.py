@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 import string
+from tkinter.tix import IMAGETEXT
 import ttkbootstrap as ttk
 import sqlparse
 from preprocessing import *
@@ -11,6 +12,8 @@ from preprocessing import *
 import sql_metadata
 import preprocessing
 import json
+import annotation
+from PIL import ImageTk, Image
 
 # FONT SETTINGS
 FONT = "Palatino"
@@ -27,7 +30,7 @@ class Application(ttk.Window):
         super().__init__(self)
 
         self.title("CZ4031 QEP Analyzer")
-        self.geometry("1400x800")
+        self.geometry("1920x1080")
         self.generate_UI()
         self.configure(bg='#2C3143')
 
@@ -72,9 +75,9 @@ class Application(ttk.Window):
         queries_text = {
             "Query 1": "select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey",
             "Query 2": "select * from customer C, orders O where C.c_custkey = O.o_custkey",
-            "Query 3": "SELECT col1, AVG(col2) FROM table3 GROUP BY col1;",
-            "Query 4": "UPDATE table4 SET col1='new_value' WHERE col2='value';",
-            "Query 5": "INSERT INTO table5 (col1, col2) VALUES ('value1', 'value2');",
+            "default": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' and c_mktsegment = 'BUILDING' GROUP by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate LIMIT 20",
+            "W/O orderby": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' and c_mktsegment = 'BUILDING' GROUP by l_orderkey, o_orderdate, o_shippriority order by o_orderdate LIMIT 20",
+            "W/O where": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' GROUP by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate LIMIT 20",
             "Query 6": "DELETE FROM table6 WHERE col1='value';",
             "Query 7": "SELECT * FROM table7 WHERE col1 IN (SELECT col1 FROM table8 WHERE col2='value');"
         }
@@ -157,26 +160,43 @@ class Application(ttk.Window):
 
         # create the notebook with the custom style
         self.tabs_holders = ttk.Notebook(self.window_container_right, style="Custom.TNotebook" )
-        self.tabs_holders.pack(pady=[30,30])
+        self.tabs_holders.pack(fill=tk.BOTH, padx=40, pady=20)
 
 
-        # Query Plan Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # Label Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         self.query_container = ttk.Frame(self.tabs_holders,borderwidth=0)
         self.query_container.pack(fill=tk.BOTH)
         self.tabs_holders.add(self.query_container, text="Query Plan")
-        
-        self.initial_query_plan_label = Label(self.query_container, text="Initial Query:", font=("Helvetica", 18))
-        self.initial_query_plan_label.configure(background='#2C3143', foreground='white')        
-        self.initial_query_plan_label.pack(pady=20)
-        self.initial_query_plan_text = Text(self.query_container, width=70, height=10)
-        self.initial_query_plan_text.pack(pady=10, padx=10)
 
-        self.new_query_plan_label = Label(self.query_container, text="New Query:", font=("Helvetica", 18))
+        self.subframe = ttk.Frame(self.query_container, borderwidth=0)
+        self.subframe.pack(side= TOP)
+
+        self.initial_query_plan_label = Label(self.subframe, text=": Initial Query", font=("Helvetica", 18))
+        self.initial_query_plan_label.configure(background='#2C3143', foreground='white')  
+        # self.initial_query_plan_label.place(relx=0.5, rely=0.5,anchor=CENTER)      
+        self.initial_query_plan_label.pack(padx=20,pady=20, anchor=W, side= LEFT)
+
+        self.new_query_plan_label = Label(self.subframe, text="New Query :", font=("Helvetica", 18))
         self.new_query_plan_label.configure(background='#2C3143', foreground='white')        
-        self.new_query_plan_label.pack(pady=20)
-        self.new_query_plan_text = Text(self.query_container, width=70, height=10)
-        self.new_query_plan_text.pack(pady=10, padx=10)
+        # self.new_query_plan_label.place(relx=0.5, rely=0.5,anchor=CENTER)     
+        self.new_query_plan_label.pack(padx=20, pady=20, anchor=E,side= RIGHT)
 
+        # Inital Plan Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+        self.initial_text_container = ttk.Frame(self.query_container,borderwidth=0)
+        self.initial_text_container.pack(side= LEFT, fill=BOTH)
+        self.initial_query_plan_text = Text(self.initial_text_container, width=60, height=50)
+        
+        self.initial_query_plan_text.pack(pady=10, padx=10, side= LEFT, fill=BOTH)
+
+        # New Plan Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        self.new_text_container = ttk.Frame(self.query_container,borderwidth=0)
+        self.new_text_container.pack(side= RIGHT, fill=BOTH)
+        self.new_query_plan_text = Text(self.new_text_container, width=60, height=50)
+         
+        self.new_query_plan_text.pack(pady=10, padx=10, side= RIGHT, fill=BOTH)
 
         # Analysis Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -214,8 +234,9 @@ class Application(ttk.Window):
         textToReturn = ""
         added_analysis_text = added_analysis_text + "\n================================================================== \n"
         
-        print('initial: ', len(initialPlan))
-        print('new: ', len(newPlan))
+        # print('initial: ', len(initialPlan))
+        # print('new: ', len(newPlan))
+       
         if (len(initialPlan) <= len(newPlan)):
             added_analysis_text =  added_analysis_text + str(initialPlan['Node Type']) 
             added_analysis_text =  added_analysis_text + "\n" + str("‾‾" * len(initialPlan['Node Type']))
@@ -224,26 +245,26 @@ class Application(ttk.Window):
                 
                 initialKey = list(initialPlan.keys())[i]
                 initialValue = initialPlan[initialKey]
-                print("-----------------------------------------------------------")
-                print("Initial key:", initialKey)
-                print("Initial value:" , initialValue)
+                # print("-----------------------------------------------------------")
+                # print("Initial key:", initialKey)
+                # print("Initial value:" , initialValue)
 
                 
 
                 for j in range(len(newPlan)):
                     newKey = list(newPlan.keys())[j]
                     newValue = newPlan[newKey]
-                    print("New key:", newKey)
-                    print("New value:" , newValue, "\n")
+                    # print("New key:", newKey)
+                    # print("New value:" , newValue, "\n")
                     
                     # if they both have same keys, compare them
                     if newKey == initialKey: 
 
                         if isinstance(newValue, list):
-                            print("Recursively going through Plans here: \n")
+                            # print("Recursively going through Plans here: \n")
                             # added_analysis_text = added_analysis_text + "\n ================================================================== \n"
                             for dicts_count in range(len(newPlan['Plans'])):
-                                print("Comparing: \n", initialPlan['Plans'][dicts_count], "\n ==WITH== \n", newPlan['Plans'][dicts_count])
+                                # print("Comparing: \n", initialPlan['Plans'][dicts_count], "\n ==WITH== \n", newPlan['Plans'][dicts_count])
                                 textToReturn = self.comparePlan(initialPlan['Plans'][dicts_count], newPlan['Plans'][dicts_count], added_analysis_text)
                         
                         if newValue != initialValue and newKey == "Startup Cost":
@@ -264,7 +285,9 @@ class Application(ttk.Window):
                         
 
                         break
-        
+       
+
+            # Return text
             return textToReturn
 
         #TODO: when initial plan > new Plan
@@ -341,28 +364,85 @@ class Application(ttk.Window):
             initialPlan = preprocessor.get_query_plan(self.initial_query)
             newPlan = preprocessor.get_query_plan(self.new_query)
 
-            # print plans in readable format
-            initial_dict = json.dumps(initialPlan,indent=4)
-            print("\n\n\nInitial Plan:\n", initial_dict)
+            annotator = annotation.Annotation(initialPlan)
+            annotator.generate_graph("img/initialPlan")
+            
+            annotator = annotation.Annotation(newPlan)
+            annotator.generate_graph("img/newPlan")
 
-            new_dict = json.dumps(newPlan,indent=4)
-            print("\n\n\nNew Plan:\n", new_dict)
+            self.initial_query_plan_text.config(state="normal")
+            self.initial_query_plan_text.delete('1.0', END) # have to clear the output from before first before inserting
+            imgInitial = Image.open("img/initialPlan.png")
+            # resized_initial_image= imgInitial.resize((350, 550), Image.ANTIALIAS)
+            self.initial_img = ImageTk.PhotoImage(imgInitial)
+            self.initial_query_plan_text.image_create(END, image=self.initial_img)
+            self.initial_query_plan_text.config(state=DISABLED)
+
+
+            self.new_query_plan_text.config(state="normal")
+            self.new_query_plan_text.delete('1.0', END) # have to clear the output from before first before inserting
+            imgNew = Image.open("img/newPlan.png")
+            # resized_new_image= imgNew.resize((350, 550), Image.ANTIALIAS)
+            self.new_img = ImageTk.PhotoImage(imgNew)
+            self.new_query_plan_text.image_create(END, image=self.new_img)
+            self.new_query_plan_text.config(state=DISABLED)
+
+
+            # # print plans in readable format
+            # initial_dict = json.dumps(initialPlan,indent=4)
+            # print("\n\n\nInitial Plan:\n", initial_dict)
+
+            # new_dict = json.dumps(newPlan,indent=4)
+            # print("\n\n\nNew Plan:\n", new_dict)
 
             # compare plans
             if initialPlan == newPlan:
                 print('\n\nExecution plans are the same') 
+                self.comparePlan(initialPlan, newPlan, added_analysis_text)
                 self.analysis_text.config(state="normal")
                 self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
                 self.analysis_text.insert('1.0', "The SQL Queries have the same query plan!")
+                costString = self.printCost(initialPlan,newPlan)
+                self.analysis_text.insert('1.0', costString)
                 self.analysis_text.config(state=DISABLED)
             else:
                 added_analysis_text = self.comparePlan(initialPlan, newPlan, added_analysis_text)
                 self.analysis_text.config(state="normal")
                 self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
                 self.analysis_text.insert('1.0', added_analysis_text)
+                costString = self.printCost(initialPlan,newPlan)
+                self.analysis_text.insert('1.0', costString)
                 self.analysis_text.config(state=DISABLED) 
 
-     
+
+    def checkClause(self, pattern, where_clause_initial, where_clause_new):
+        match_initial = re.search(pattern, where_clause_initial, re.IGNORECASE)
+        match_new = re.search(pattern, where_clause_new, re.IGNORECASE)
+
+        if match_initial:
+            where_clause_initial = where_clause_initial[:match_initial.start()]
+
+        if match_new:
+            where_clause_new = where_clause_new[:match_new.start()]
+
+        print("\n\nInitial:\n", where_clause_initial)
+        print("\n\nNew:\n", where_clause_new)
+        return where_clause_initial, where_clause_new
+
+
+    def checkSubClause(self, clause1, clauseList, clause_initial, clause_new):        
+        # if groupby clauses exist for both
+        if clause_initial and clause_new:
+            # checking all the clauses
+            clauseList = [r"(GROUP BY .*)", r"(HAVING .*)", r"(ORDER BY .*)"]
+
+            for clause2 in clauseList:
+                if clause1 == clause2:
+                    continue
+                clause_initial, clause_new = self.checkClause(clause2, clause_initial, clause_new)
+                return clause_initial, clause_new
+    
+    
     def get_updated_clause(self, initial_query, new_query):
         difference = ""
 
@@ -373,63 +453,28 @@ class Application(ttk.Window):
         # if where clauses exist for both
         if where_match_initial and where_match_new:
             # removing the first 5 characters (where)
-            where_clause_initial = where_match_initial.group(1)[6:]
-            print("\n\nInitial:\n", where_clause_initial)
+            first_where_clause_initial = where_match_initial.group(1)[6:]
+            print("\n\nInitial:\n", first_where_clause_initial)
             
-            where_clause_new = where_match_new.group(1)[6:]
-            print("\n\nNew:\n", where_clause_new)
- 
-            # returns the part that starts with group by for both initial and new
-            pattern = r"(GROUP BY .*)"
-            groupby_match_initial = re.search(pattern, where_clause_initial, re.IGNORECASE)
-            groupby_match_new = re.search(pattern, where_clause_new, re.IGNORECASE)
-
-            # returns the part that starts with order by for both initial and new
-            pattern = r"(ORDER BY .*)"
-            orderby_match_initial = re.search(pattern, where_clause_initial, re.IGNORECASE)
-            orderby_match_new = re.search(pattern, where_clause_new, re.IGNORECASE)
-
-            # returns the part that starts with limit for both initial and new
-            pattern = r"(LIMIT .*)"
-            limit_match_initial = re.search(pattern, where_clause_initial, re.IGNORECASE)
-            limit_match_new = re.search(pattern, where_clause_new, re.IGNORECASE)
+            first_where_clause_new = where_match_new.group(1)[6:]
+            print("\n\nNew:\n", first_where_clause_new)
 
 
-            # checking if groupby, orderby, limit clauses exists in initial where clause, if exists, remove the them from where clause
-            if groupby_match_initial:
-                where_clause_initial = where_clause_initial[:groupby_match_initial.start()]
+            # checking all the clauses
+            clauseList = [r"(GROUP BY .*)", r"(HAVING .*)", r"(ORDER BY .*)", r"(LIMIT .*)", r"(OFFSET .*)"]
 
-            elif orderby_match_initial:
-                where_clause_initial = where_clause_initial[:orderby_match_initial.start()]
-
-            elif limit_match_initial:
-                where_clause_initial = where_clause_initial[:limit_match_initial.start()]
-
-
-            # checking if groupby, orderby, limit clauses exists in new where clause, if exists, remove the them from where clause
-            if groupby_match_new:
-                where_clause_new = where_clause_new[:groupby_match_new.start()]
+            for clause in clauseList:
+                where_clause_initial, where_clause_new = self.checkClause(clause, first_where_clause_initial, first_where_clause_new)
                 
-            elif orderby_match_new:
-                where_clause_new = where_clause_new[:orderby_match_new.start()]
-                
-            elif limit_match_new:
-                where_clause_new = where_clause_new[:limit_match_new.start()]
-                
-
-            print("\n\nInitial Where Clause:\n", where_clause_initial)
-            print("\n\nNew Where Clause:\n", where_clause_new)
-
-
-            if (where_clause_new == where_clause_initial):
+            if (where_clause_initial == where_clause_new):
                 print("Where clause is the same")
+                return None
 
             else:
                 print("Different")
                 
                 initial_conditions = set(map(str.strip, where_clause_initial.split('and')))
                 new_conditions = set(map(str.strip, where_clause_new.split('and')))
-
                
                 # Getting the difference 
 
@@ -445,43 +490,35 @@ class Application(ttk.Window):
                 print("\nDIFF ", diff_conditions)
                 difference = difference + str(diff_conditions) + "in the WHERE clause"
 
+
+
+
+            
+            clauseList = [r"(GROUP BY .*)", r"(HAVING .*)", r"(ORDER BY .*)"]
+            
+            for clause1 in clauseList:
+                clause_initial, clause_new = self.checkClause(clause1, first_where_clause_initial, first_where_clause_new)
+                clause_initial, clause_new = self.checkSubClause(clause1, clauseList, clause_initial, clause_new)
+
+                if clause1 == r"(GROUP BY .*)":
+                    groupby_clause_initial = clause_initial
+                    groupby_clause_new = clause_new
+
+                if clause1 == r"(HAVING .*)":
+                    having_clause_initial = clause_initial
+                    having_clause_new = clause_new
+                    print(having_clause_initial)
+                    print(having_clause_new)
+
+                if clause1 == r"(ORDER BY .*)":
+                    orderby_clause_initial = clause_initial
+                    orderby_clause_new = clause_new
+                    print(orderby_clause_initial)
+                    print(orderby_clause_new)
+
                 
 
-
-            # if groupby_match_initial or groupby_match_new:
-            #     groupby_clause_initial = groupby_match_initial.group(1)
-            #     print("\n\nInitial:\n", groupby_clause_initial)
-
-            #     groupby_clause_new = groupby_match_new.group(1)
-            #     print("\n\nNew:\n", groupby_clause_new)
-
-            #     if (groupby_clause_new == groupby_clause_initial):
-            #         print("Group By clause is the same")
-
-
-
-            # if orderby_match_initial:
-            #     orderby_clause_initial = orderby_match_initial.group(1)
-            #     print("\n\nInitial:\n", orderby_clause_initial)
-
-            #     orderby_clause_new = orderby_match_new.group(1)
-            #     print("\n\nNew:\n", orderby_clause_new)
-
-            #     if (orderby_clause_new == orderby_clause_initial):
-            #         print("Order By clause is the same")
-
-
-            # if limit_match_initial:
-            #     limit_clause_initial = limit_match_initial.group(1)
-            #     print("\n\nInitial:\n", limit_clause_initial)
-
-            #     limit_clause_new = limit_match_new.group(1)
-            #     print("\n\nNew:\n", limit_clause_new)
-
-            #     if (limit_clause_new == limit_match_initial):
-            #         print("Limit clause is the same")
-            
-            
+                            
             
         else:
             print("WHERE clause not found.")
@@ -490,7 +527,32 @@ class Application(ttk.Window):
         return difference
 
 
+    def calculateCost(self, plan):
+        totalCost = 0
+        for i in range(len(plan)):     
+            initialKey = list(plan.keys())[i]
+            initialValue = plan[initialKey]
+            if initialKey == 'Total Cost':
+                totalCost += initialValue
+        return totalCost
+            
 
+    def printCost(self,initialPlan,newPlan):
+        total_initial_cost = self.calculateCost(initialPlan)
+        total_new_cost = self.calculateCost(newPlan)
+        if total_new_cost < total_initial_cost:
+            total_initial_cost_string = f"\nThe total cost has reduced from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is lower in the new plan, which should result in faster execution times.\n"
+            return str(total_initial_cost_string)
+        
+        else:
+            total_initial_cost_string = f"\nThe total cost has increased from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is higher in the new plan, which should result in slower execution times.\n"
+            return str(total_initial_cost_string)
+
+    def findRelations(self, plan):
+
+
+        
+        pass
 
 
     def startupCostCompare(self, initialCost, newCost):

@@ -1,0 +1,14 @@
+digraph {
+	graph [bgcolor=white]
+	node [color=black fillcolor=lightblue style=filled]
+	7916730674190943100 [label="Hash Join (Cost: 50879.05)" shape=box]
+	2301518610452148668 [label="Seq Scan (Cost: 41095.00)
+Relation Name: orders" shape=box]
+	7916730674190943100 -> 2301518610452148668
+	-2378453145708291152 [label="Hash (Cost: 5460.00)" shape=box]
+	7916730674190943100 -> -2378453145708291152
+	5923285468327159682 [label="Seq Scan (Cost: 5460.00)
+Relation Name: customer" shape=box]
+	-2378453145708291152 -> 5923285468327159682
+	node [shape=box]
+}
