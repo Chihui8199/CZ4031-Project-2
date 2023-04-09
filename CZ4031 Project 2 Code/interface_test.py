@@ -291,56 +291,56 @@ class Application(ttk.Window):
             return textToReturn
 
         #TODO: when initial plan > new Plan
-        else:
-            added_analysis_text =  added_analysis_text + str(newPlan['Node Type']) 
-            added_analysis_text =  added_analysis_text + "\n" + str("‾‾" * len(newPlan['Node Type']))
+        # else:
+        #     added_analysis_text =  added_analysis_text + str(newPlan['Node Type']) 
+        #     added_analysis_text =  added_analysis_text + "\n" + str("‾‾" * len(newPlan['Node Type']))
 
-            for i in range(len(initialPlan)):
+        #     for i in range(len(initialPlan)):
                 
-                initialKey = list(initialPlan.keys())[i]
-                initialValue = initialPlan[initialKey]
-                print("-----------------------------------------------------------")
-                print("Initial key:", initialKey)
-                print("Initial value:" , initialValue)
+        #         initialKey = list(initialPlan.keys())[i]
+        #         initialValue = initialPlan[initialKey]
+        #         print("-----------------------------------------------------------")
+        #         print("Initial key:", initialKey)
+        #         print("Initial value:" , initialValue)
 
                 
 
-                for j in range(len(newPlan)):
-                    newKey = list(newPlan.keys())[j]
-                    newValue = newPlan[newKey]
-                    print("New key:", newKey)
-                    print("New value:" , newValue, "\n")
+        #         for j in range(len(newPlan)):
+        #             newKey = list(newPlan.keys())[j]
+        #             newValue = newPlan[newKey]
+        #             print("New key:", newKey)
+        #             print("New value:" , newValue, "\n")
                     
-                    # if they both have same keys, compare them
-                    if newKey == initialKey: 
+        #             # if they both have same keys, compare them
+        #             if newKey == initialKey: 
 
-                        # if isinstance(newValue, list):
-                        #     print("Recursively going through Plans here: \n")
-                        #     # added_analysis_text = added_analysis_text + "\n ================================================================== \n"
-                        #     for dicts_count in range(len(newPlan['Plans'])):
-                        #         print("Comparing: \n", initialPlan['Plans'][dicts_count], "\n ==WITH== \n", newPlan['Plans'][dicts_count])
-                        #         textToReturn = self.comparePlan(initialPlan['Plans'][dicts_count], newPlan['Plans'][dicts_count], added_analysis_text)
+        #                 # if isinstance(newValue, list):
+        #                 #     print("Recursively going through Plans here: \n")
+        #                 #     # added_analysis_text = added_analysis_text + "\n ================================================================== \n"
+        #                 #     for dicts_count in range(len(newPlan['Plans'])):
+        #                 #         print("Comparing: \n", initialPlan['Plans'][dicts_count], "\n ==WITH== \n", newPlan['Plans'][dicts_count])
+        #                 #         textToReturn = self.comparePlan(initialPlan['Plans'][dicts_count], newPlan['Plans'][dicts_count], added_analysis_text)
                         
-                        if newValue != initialValue and newKey == "Startup Cost":
-                            startupString = self.startupCostCompare(initialValue, newValue)
-                            added_analysis_text = added_analysis_text + str(startupString)
+        #                 if newValue != initialValue and newKey == "Startup Cost":
+        #                     startupString = self.startupCostCompare(initialValue, newValue)
+        #                     added_analysis_text = added_analysis_text + str(startupString)
                         
-                        if newValue != initialValue and newKey == "Total Cost":
-                            totalString = self.totalCostCompare(initialValue, newValue)
-                            added_analysis_text = added_analysis_text + str(totalString)
+        #                 if newValue != initialValue and newKey == "Total Cost":
+        #                     totalString = self.totalCostCompare(initialValue, newValue)
+        #                     added_analysis_text = added_analysis_text + str(totalString)
 
-                        if newValue != initialValue and newKey == "Plan Rows":
-                            planRowString = self.planRowsCompare(initialValue, newValue)
-                            added_analysis_text = added_analysis_text + str(planRowString)
+        #                 if newValue != initialValue and newKey == "Plan Rows":
+        #                     planRowString = self.planRowsCompare(initialValue, newValue)
+        #                     added_analysis_text = added_analysis_text + str(planRowString)
                         
-                        if newValue != initialValue and newKey != "Plans":
-                            # added_analysis_text = added_analysis_text + "\n\n" + newKey + " of the initial query has changed from " + str(initialValue) + " to " + str(newValue) + " in the new query." 
-                            textToReturn = added_analysis_text
+        #                 if newValue != initialValue and newKey != "Plans":
+        #                     # added_analysis_text = added_analysis_text + "\n\n" + newKey + " of the initial query has changed from " + str(initialValue) + " to " + str(newValue) + " in the new query." 
+        #                     textToReturn = added_analysis_text
                         
 
-                        break
+        #                 break
         
-            return textToReturn
+        #     return textToReturn
         
 
     def why_change(self,initial,new):
@@ -409,9 +409,20 @@ class Application(ttk.Window):
                 added_analysis_text = self.comparePlan(initialPlan, newPlan, added_analysis_text)
                 self.analysis_text.config(state="normal")
                 self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
-                self.analysis_text.insert('1.0', added_analysis_text)
+                # self.analysis_text.insert('1.0', added_analysis_text)
+
+                
+                print("=============================================")
+                compareInitialRelationString = self.printJoinRelations(initialPlan, "Initial Plan:")
+                self.analysis_text.insert(END, compareInitialRelationString)
+                print("=============================================")
+
+                compareNewRelationString = self.printJoinRelations(newPlan, "\n\nNew Plan:")
+                self.analysis_text.insert(END, compareNewRelationString)
+                
                 costString = self.printCost(initialPlan,newPlan)
-                self.analysis_text.insert('1.0', costString)
+                self.analysis_text.insert(END, costString)
+                
                 self.analysis_text.config(state=DISABLED) 
 
 
@@ -516,9 +527,6 @@ class Application(ttk.Window):
                     print(orderby_clause_initial)
                     print(orderby_clause_new)
 
-                
-
-                            
             
         else:
             print("WHERE clause not found.")
@@ -541,18 +549,46 @@ class Application(ttk.Window):
         total_initial_cost = self.calculateCost(initialPlan)
         total_new_cost = self.calculateCost(newPlan)
         if total_new_cost < total_initial_cost:
-            total_initial_cost_string = f"\nThe total cost has reduced from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is lower in the new plan, which should result in faster execution times.\n"
+            total_initial_cost_string = f"\n\nThe total cost has reduced from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is lower in the new plan, which should result in faster execution times.\n"
             return str(total_initial_cost_string)
         
         else:
-            total_initial_cost_string = f"\nThe total cost has increased from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is higher in the new plan, which should result in slower execution times.\n"
+            total_initial_cost_string = f"\n\nThe total cost has increased from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is higher in the new plan, which should result in slower execution times.\n"
             return str(total_initial_cost_string)
 
-    def findRelations(self, plan):
 
+    def printJoinRelations(self, plan, resultString):
+        for i in range(len(plan)):     
+            print("iteration", i)
+            initialKey = list(plan.keys())[i]
+            initialValue = plan[initialKey]
 
-        
-        pass
+            if initialKey == 'Node Type':
+
+                if "Join" in initialValue or "Nested" in initialValue:
+                    joinString = f"\n{initialValue} was used between "
+                    resultString = resultString + joinString
+                
+                if "Scan" in initialValue:
+                    scanString = f" ({initialValue})"
+
+            elif initialKey == 'Relation Name':
+                relationString = f"{initialValue}" + scanString
+                print(relationString)
+                resultString = resultString + relationString
+                
+            elif initialKey == 'Plans':
+                count = 0
+                for arrays in initialValue:
+                    print(count)
+                    if count == 1:
+                        resultString = resultString + " and "
+                    print("NESTINGGGGGG")
+                    resultString = self.printJoinRelations(arrays, resultString)
+                    count+=1
+
+        return resultString
+
 
 
     def startupCostCompare(self, initialCost, newCost):
