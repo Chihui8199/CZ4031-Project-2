@@ -2,6 +2,8 @@ import difflib
 import re
 import tkinter as tk
 from tkinter import *
+from tkinter import font
+from tkinter import messagebox
 from tkinter.scrolledtext import ScrolledText
 import string
 from tkinter.tix import IMAGETEXT
@@ -14,6 +16,7 @@ import preprocessing
 import json
 import annotation
 from PIL import ImageTk, Image
+from ttkbootstrap.tableview import Tableview
 
 # FONT SETTINGS
 FONT = "Palatino"
@@ -25,6 +28,7 @@ FONT_BOLD = (f"{FONT} {BOLD}", 12)
 FONT_TITLE = (f"{FONT} {BOLD}", 40)
 FONT_CREDITS = (f"{FONT} {ITALIC}", 10)
 
+
 class Application(ttk.Window):
     def __init__(self, master=None):
         super().__init__(self)
@@ -33,8 +37,13 @@ class Application(ttk.Window):
         self.geometry("1920x1080")
         self.generate_UI()
         self.configure(bg='#2C3143')
+        # self.iconbitmap("CZ4031 Project 2 Code/app_icon.ico")
+        self.favicon_ico_path = 'CZ4031 Project 2 Code/cool.ico'
+        self.icon_photo = ImageTk.PhotoImage(
+        Image.open(self.favicon_ico_path))
+        self.iconphoto(False, self.icon_photo)
 
-
+    
     def generate_UI(self):
         """
         Generate the main UI screen for most user interactions.
@@ -101,7 +110,7 @@ class Application(ttk.Window):
         self.text_container1 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.text_container1.pack()
 
-        self.query_1 = Text(self.text_container1, width=70, height=10)
+        self.query_1 = Text(self.text_container1, width=70, height=10, wrap="word")
         self.query_1.pack(pady=10, padx=10)
 
         def update_query1(*args):
@@ -132,7 +141,7 @@ class Application(ttk.Window):
         self.text_container2 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.text_container2.pack()
 
-        self.query_2 = Text(self.text_container2, width=70, height=10)
+        self.query_2 = Text(self.text_container2, width=70, height=10, wrap="word")
         self.query_2.pack(pady=10, padx=10)
 
         def update_query2(*args):
@@ -175,18 +184,18 @@ class Application(ttk.Window):
         self.initial_query_plan_label = Label(self.subframe, text=": Initial Query", font=("Helvetica", 18))
         self.initial_query_plan_label.configure(background='#2C3143', foreground='white')  
         # self.initial_query_plan_label.place(relx=0.5, rely=0.5,anchor=CENTER)      
-        self.initial_query_plan_label.pack(padx=20,pady=20, anchor=W, side= LEFT)
+        self.initial_query_plan_label.pack(padx=20,pady=20, side = LEFT)#, anchor=W, side= LEFT)
 
         self.new_query_plan_label = Label(self.subframe, text="New Query :", font=("Helvetica", 18))
         self.new_query_plan_label.configure(background='#2C3143', foreground='white')        
         # self.new_query_plan_label.place(relx=0.5, rely=0.5,anchor=CENTER)     
-        self.new_query_plan_label.pack(padx=20, pady=20, anchor=E,side= RIGHT)
+        self.new_query_plan_label.pack(padx=20, pady=20, side = RIGHT)#, anchor=E,side= RIGHT)
 
         # Inital Plan Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
         self.initial_text_container = ttk.Frame(self.query_container,borderwidth=0)
         self.initial_text_container.pack(side= LEFT, fill=BOTH)
-        self.initial_query_plan_text = Text(self.initial_text_container, width=60, height=50)
+        self.initial_query_plan_text = Text(self.initial_text_container, width=60, height=50, wrap="word")
         
         self.initial_query_plan_text.pack(pady=10, padx=10, side= LEFT, fill=BOTH)
 
@@ -194,7 +203,7 @@ class Application(ttk.Window):
 
         self.new_text_container = ttk.Frame(self.query_container,borderwidth=0)
         self.new_text_container.pack(side= RIGHT, fill=BOTH)
-        self.new_query_plan_text = Text(self.new_text_container, width=60, height=50)
+        self.new_query_plan_text = Text(self.new_text_container, width=60, height=50, wrap="word")
          
         self.new_query_plan_text.pack(pady=10, padx=10, side= RIGHT, fill=BOTH)
 
@@ -207,9 +216,16 @@ class Application(ttk.Window):
         self.analysis_label = Label(self.analysis_container, text="What has changed and why:", font=("Helvetica", 18))
         self.analysis_label.configure(background='#2C3143', foreground='white')
         self.analysis_label.pack(pady=20)
-        self.analysis_text = Text(self.analysis_container, width=70, height=50)
+        self.analysis_text = Text(self.analysis_container, width=70, height=50, wrap="word")
         self.analysis_text.pack(pady=10, padx=10)
 
+        self.sql_output_container_initial = ttk.Frame(self.tabs_holders,borderwidth=0)
+        self.sql_output_container_initial.pack(fill=tk.BOTH)
+        self.tabs_holders.add(self.sql_output_container_initial, text="Output (Initial Query)")
+
+        self.sql_output_container_new = ttk.Frame(self.tabs_holders,borderwidth=0)
+        self.sql_output_container_new.pack(fill=tk.BOTH)
+        self.tabs_holders.add(self.sql_output_container_new, text="Output (New Query)")
 
 
     def submit_queries(self):
@@ -343,87 +359,159 @@ class Application(ttk.Window):
         #     return textToReturn
         
 
+
     def why_change(self,initial,new):
 
         print("\nInitial_query:\n",initial)
         print("\nNew_query:\n",new)
         preprocessor = preprocessing.Preprocessing()
-
+        custom_font = font.Font(family="Helvetica", size=18, weight="bold")
 
         updated_clause = self.get_updated_clause(initial, new)
         if updated_clause == None:
-            self.analysis_text.config(state="normal")
-            self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
-            self.analysis_text.insert('1.0', "SQL Queries are the same, please ensure they are different!")
+            # self.analysis_text.config(state="normal")
+            # self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
+            # self.analysis_text.insert('1.0', "\n\n\n\n\n\n\n\n\n\n\n\n\n\nSQL Queries are the same, please ensure they are different!", ("custom",))
+            # self.analysis_text.tag_configure("custom", font=custom_font, justify='center')
+            messagebox.showerror("showwarning", "SQL Queries are the same, please ensure they are different!")
+
             self.analysis_text.config(state=DISABLED)
         else:
             
             print(f'\nDifference in New SQL Query: ', updated_clause)
             added_analysis_text = "Difference in New SQL Query: \n" + updated_clause + "\n"
 
-            initialPlan = preprocessor.get_query_plan(self.initial_query)
-            newPlan = preprocessor.get_query_plan(self.new_query)
-
-            annotator = annotation.Annotation(initialPlan)
-            annotator.generate_graph("img/initialPlan")
+            try:
+                initialPlan = preprocessor.get_query_plan(self.initial_query)
+                newPlan = preprocessor.get_query_plan(self.new_query)
+            except Exception as e:
+                messagebox.showerror("showwarning", "Please input a working SQL Query!")
+                return
             
-            annotator = annotation.Annotation(newPlan)
-            annotator.generate_graph("img/newPlan")
+            
+            def tableTab(query, container):
+                for child in container.winfo_children():
+                    child.destroy() # Clean up sql output
 
-            self.initial_query_plan_text.config(state="normal")
-            self.initial_query_plan_text.delete('1.0', END) # have to clear the output from before first before inserting
-            imgInitial = Image.open("img/initialPlan.png")
-            # resized_initial_image= imgInitial.resize((350, 550), Image.ANTIALIAS)
-            self.initial_img = ImageTk.PhotoImage(imgInitial)
-            self.initial_query_plan_text.image_create(END, image=self.initial_img)
-            self.initial_query_plan_text.config(state=DISABLED)
+                actual_output, column_names  = preprocessor.get_query_results(query)
 
+                if (actual_output is None):
+                    self.analyze_btn.configure(state=ACTIVE)
+                    return
+                elif (len(actual_output) == 0):
+                    ttk.Label(container, text = "No results matching.", font=FONT_BOLD).pack(fill=tk.X, padx=20, pady=10, anchor=CENTER)
+                else:
+                    self.create_table_view(actual_output, column_names, container) 
+            
+            # Initial Query Table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            for child in self.sql_output_container_initial.winfo_children():
+                child.destroy() # Clean up sql output
 
-            self.new_query_plan_text.config(state="normal")
-            self.new_query_plan_text.delete('1.0', END) # have to clear the output from before first before inserting
-            imgNew = Image.open("img/newPlan.png")
-            # resized_new_image= imgNew.resize((350, 550), Image.ANTIALIAS)
-            self.new_img = ImageTk.PhotoImage(imgNew)
-            self.new_query_plan_text.image_create(END, image=self.new_img)
-            self.new_query_plan_text.config(state=DISABLED)
+            actual_output_initial, column_names_initial  = preprocessor.get_query_results(self.initial_query)
 
-
-            # # print plans in readable format
-            # initial_dict = json.dumps(initialPlan,indent=4)
-            # print("\n\n\nInitial Plan:\n", initial_dict)
-
-            # new_dict = json.dumps(newPlan,indent=4)
-            # print("\n\n\nNew Plan:\n", new_dict)
-
-            # compare plans
-            if initialPlan == newPlan:
-                print('\n\nExecution plans are the same') 
-                self.comparePlan(initialPlan, newPlan, added_analysis_text)
-                self.analysis_text.config(state="normal")
-                self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
-                self.analysis_text.insert('1.0', "The SQL Queries have the same query plan!")
-                costString = self.printCost(initialPlan,newPlan)
-                self.analysis_text.insert('1.0', costString)
-                self.analysis_text.config(state=DISABLED)
+            if (actual_output_initial is None):
+                self.analyze_btn.configure(state=ACTIVE)
+                return
+            elif (len(actual_output_initial) == 0):
+                ttk.Label(self.sql_output_container_initial, text = "No results matching.", font=FONT_BOLD).pack(fill=tk.X, padx=20, pady=10, anchor=CENTER)
             else:
-                added_analysis_text = self.comparePlan(initialPlan, newPlan, added_analysis_text)
-                self.analysis_text.config(state="normal")
-                self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
-                # self.analysis_text.insert('1.0', added_analysis_text)
+                self.create_table_view(actual_output_initial, column_names_initial, self.sql_output_container_initial) 
 
-                
-                print("=============================================")
-                compareInitialRelationString = self.printJoinRelations(initialPlan, "Initial Plan:")
-                self.analysis_text.insert(END, compareInitialRelationString)
-                print("=============================================")
+            # New Query table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            for child in self.sql_output_container_new.winfo_children():
+                child.destroy() # Clean up sql output
 
-                compareNewRelationString = self.printJoinRelations(newPlan, "\n\nNew Plan:")
-                self.analysis_text.insert(END, compareNewRelationString)
+            actual_output_new, column_names_new  = preprocessor.get_query_results(self.new_query)
+
+            if (actual_output_new is None):
+                self.analyze_btn.configure(state=ACTIVE)
+                return
+            elif (len(actual_output_new) == 0):
+                ttk.Label(self.sql_output_container_new, text = "No results matching.", font=FONT_BOLD).pack(fill=tk.X, padx=20, pady=10, anchor=CENTER)
+            else:
+                self.create_table_view(actual_output_new, column_names_new, self.sql_output_container_new) 
+
+            try:
                 
-                costString = self.printCost(initialPlan,newPlan)
-                self.analysis_text.insert(END, costString)
+
+                annotator = annotation.Annotation(initialPlan)
+                annotator.generate_graph("img/initialPlan")
+                annotator = annotation.Annotation(newPlan)
+                annotator.generate_graph("img/newPlan")
+
+                self.initial_query_plan_text.config(state="normal")
+                self.initial_query_plan_text.delete('1.0', END) # have to clear the output from before first before inserting
+                imgInitial = Image.open("img/initialPlan.png")
+                # resized_initial_image= imgInitial.resize((self.initial_query_plan_text.winfo_width(), self.initial_query_plan_text.winfo_height()))
+                # self.initial_img = ImageTk.PhotoImage(resized_initial_image)
+                self.initial_img = ImageTk.PhotoImage(imgInitial)
+                self.initial_query_plan_text.image_create(END, image=self.initial_img)
+                self.initial_query_plan_text.config(state=DISABLED)
+
+                self.new_query_plan_text.config(state="normal")
+                self.new_query_plan_text.delete('1.0', END) # have to clear the output from before first before inserting
+                imgNew = Image.open("img/newPlan.png")
+                # resized_new_image= imgNew.resize((self.new_query_plan_text.winfo_width(), self.new_query_plan_text.winfo_height()))
+                # self.new_img = ImageTk.PhotoImage(resized_new_image)
+                self.new_img = ImageTk.PhotoImage(imgNew)
+                self.new_query_plan_text.image_create(END, image=self.new_img)
+                self.new_query_plan_text.config(state=DISABLED)
+
+                # PUT STUFF HERE TO TEST
+
+                # compare plans
+                if initialPlan == newPlan:
+                    print('\n\nExecution plans are the same') 
+                    self.comparePlan(initialPlan, newPlan, added_analysis_text)
+                    self.analysis_text.config(state="normal")
+                    self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
+                    self.analysis_text.insert('1.0', "The SQL Queries have the same query plan!")
+                    costString = self.printCost(initialPlan,newPlan)
+                    self.analysis_text.insert('1.0', costString)
+                    self.analysis_text.config(state=DISABLED)
+                else:
+                    added_analysis_text = self.comparePlan(initialPlan, newPlan, added_analysis_text)
+                    self.analysis_text.config(state="normal")
+                    self.analysis_text.delete('1.0', END) # have to clear the output from before first before inserting
+                    # self.analysis_text.insert('1.0', added_analysis_text)
+
+                    
+                    # print("=============================================")
+                    # compareInitialRelationString = self.printJoinRelations(initialPlan, "Initial Plan:")
+                    # self.analysis_text.insert(END, compareInitialRelationString)
+                    # print("=============================================")
+
+                    # compareNewRelationString = self.printJoinRelations(newPlan, "\n\nNew Plan:")
+                    # self.analysis_text.insert(END, compareNewRelationString)
+
+                    self.analysis_text.config(state="normal")
+                    self.analysis_text.insert(END, "==========================================================================\n")
+                    self.analysis_text.insert(END, "\nIn the Initial Query:\n", ("custom",))
+                    initialJoinString = self.searchJoin(initialPlan)
+
+                    self.analysis_text.insert(END, "\n==========================================================================\n")
+                    self.analysis_text.insert(END, "\nIn the New Query:\n", ("custom",))
+                    newJoinString = self.searchJoin(newPlan)
+                    self.analysis_text.insert(END, "\n==========================================================================\n\n\n")
+                    if initialJoinString == newJoinString:
+                        self.analysis_text.delete('1.0', END)
+                    
                 
-                self.analysis_text.config(state=DISABLED) 
+                    costString = self.printCost(initialPlan,newPlan)
+                    self.analysis_text.insert(END, "Total Cost Comparison:\n\n", ("custom",))
+                    self.analysis_text.insert(END, costString)
+                    self.analysis_text.tag_configure("custom", font=custom_font, underline=True)
+                    self.analysis_text.config(state=DISABLED) 
+
+
+            
+            except Exception as e:
+                messagebox.showerror("showwarning", "SQL Query is invalid, please try again!")
+                        
+            
+
+
+
 
 
     def checkClause(self, pattern, where_clause_initial, where_clause_new):
@@ -549,11 +637,11 @@ class Application(ttk.Window):
         total_initial_cost = self.calculateCost(initialPlan)
         total_new_cost = self.calculateCost(newPlan)
         if total_new_cost < total_initial_cost:
-            total_initial_cost_string = f"\n\nThe total cost has reduced from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is lower in the new plan, which should result in faster execution times.\n"
+            total_initial_cost_string = f"The total cost has reduced from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is lower in the new plan, which should result in faster execution times.\n"
             return str(total_initial_cost_string)
         
         else:
-            total_initial_cost_string = f"\n\nThe total cost has increased from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is higher in the new plan, which should result in slower execution times.\n"
+            total_initial_cost_string = f"The total cost has increased from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is higher in the new plan, which should result in slower execution times.\n"
             return str(total_initial_cost_string)
 
 
@@ -591,6 +679,91 @@ class Application(ttk.Window):
 
 
 
+    def searchJoin(self,plan):
+
+        joinList, relationList, scanList = [],[], []
+        joinOrder = 0
+
+        # find relations to join type and put into a list as a tuple
+        def findRelations(plan,joinOrder,joinList, relationList):
+
+            for i in range(len(plan)):
+                initialKey = list(plan.keys())[i]
+                initialValue = plan[initialKey]
+
+                if initialKey == 'Node Type':
+                
+                    if "Join" in initialValue or "Nested Loop" in initialValue:
+                        joinOrder += 1
+                        joinList.append((joinOrder, initialValue))
+
+                if initialKey == 'Relation Name':
+                    relationList.append((joinOrder,initialValue))
+                    scanList.append((initialValue, plan['Node Type']))
+                    
+                
+                if initialKey == 'Plans':
+                    for j in initialValue:
+                        findRelations(j,joinOrder,joinList,relationList)
+            
+            return joinList, relationList
+        
+
+        joinList,relationList = findRelations(plan,joinOrder, joinList, relationList)
+
+        # Make dictionary of Relations to Scan
+        scan_dict = {}
+        for relations,scan in scanList:
+            scan_dict[relations] = scan
+    
+        join_dict = {}
+
+        for join in joinList:
+            tempList = []
+            for relations in relationList:
+                if join[0] <= relations[0]:
+                    tempList.append(relations[1])
+            join_dict[join[1]] = tempList
+
+        for join in join_dict:
+
+            for join2 in join_dict:
+                if join == join2: 
+                    continue
+
+                if all(elem in join_dict[join2] for elem in join_dict[join]):
+                    elemstring = ""
+                    for elem in join_dict[join]:
+                        join_dict[join2].remove(elem)
+                        elemstring = elemstring + elem + ", "
+                    elemstring = "[" + elemstring[:-2] + "]"
+                    join_dict[join2].append(elemstring)
+                        
+                    
+        print("Dict here",join_dict)
+        listToReturn = []
+        for join in join_dict:
+            try:
+                joinString = f"\n{join} was used between '{join_dict[join][0]}'({scan_dict[join_dict[join][0]]}) and '{join_dict[join][1]}'({scan_dict[join_dict[join][1]]})\n"
+                listToReturn.append(joinString)
+                self.analysis_text.config(state="normal")
+                self.analysis_text.insert(END, joinString)
+            except Exception as e:
+                try:
+                    joinString = f"\n{join} was used between '{join_dict[join][0]}'({scan_dict[join_dict[join][0]]}) and '{join_dict[join][1]}'\n"
+                    listToReturn.append(joinString)
+                    self.analysis_text.config(state="normal")
+                    self.analysis_text.insert(END, joinString)
+
+                except Exception as e:
+                    joinString = f"\n{join} was used between '{join_dict[join][0]}' and '{join_dict[join][1]}'\n"
+                    listToReturn.append(joinString)
+                    self.analysis_text.config(state="normal")
+                    self.analysis_text.insert(END, joinString)
+                    
+        return listToReturn
+                    
+        
     def startupCostCompare(self, initialCost, newCost):
         startupString = ""
         if initialCost > newCost:
@@ -617,3 +790,32 @@ class Application(ttk.Window):
             planRowString = "\n" + "Increased Plan Rows: The Plan Rows of the new plan has been increased from " + str(initialCost) + " to " + str(newCost) +" . This means that the new plan is expected to return more rows, which can result in slower execution times." + "\n"
         return planRowString
 
+    def create_table_view(self, output, columns, container):
+        """
+        Used to create a table view for the sql output. Extracts the row and column information
+        """ 
+        # Prepare column data
+        coldata = []
+        for name in columns:
+            header_column = {"text": f"{name}", "stretch": True}
+            coldata.append(header_column)
+        
+        # Prepare row data
+        rowdata = []
+        for row in output:
+            rowdata.append(row)
+
+        # Create table view
+        dt = Tableview(
+            master=container,
+            coldata=coldata,
+            rowdata=rowdata,
+            paginated=True,
+            pagesize=50,
+            searchable=True,
+            # bootstyle="primary",
+            stripecolor=(None, None),
+            autoalign= True,
+            autofit = True
+        )
+        dt.pack(fill=BOTH, expand=TRUE, padx=10, pady=10)

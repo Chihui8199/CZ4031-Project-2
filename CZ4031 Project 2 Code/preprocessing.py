@@ -14,9 +14,9 @@ class Preprocessing:
 
     def get_query_results(self, sql_query):
         output = self.validate(sql_query) 
-        query_res = self.db.execute(sql_query)
+        query_res, column_names = self.db.execute(sql_query)
         # print(query_res)
-        return query_res
+        return query_res, column_names
     
     
     def get_query_plan(self, sql_query):
@@ -38,7 +38,7 @@ class Preprocessing:
         # CALL on front end raise value error 
         
         output = self.validate(sql_query) 
-        query_plan_res = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
+        query_plan_res,b = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
         try:
             query_plan_res = query_plan_res[0][0][0]["Plan"]
         except Exception as e:
@@ -135,8 +135,10 @@ class DBConnection:
         """
         try:
             self.cur.execute(query)
+            column_names = [description[0] for description in self.cur.description]
+            print(column_names)
             query_results = self.cur.fetchall()
-            return query_results
+            return query_results, column_names
         except Exception as e:
             pass
 

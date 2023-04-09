@@ -17,14 +17,14 @@ if __name__ == '__main__':
             "GROUP BY l_orderkey, o_orderdate, o_shippriority " \
             "ORDER BY revenue DESC, o_orderdate " \
             "LIMIT 20;"
-        sql_query2 = "select * FROM customer" 
+        sql_query2 = "select * from customer" 
         query_plan1 = preprocessor.get_query_plan(sql_query1)
         # print(query_plan1)
         query_res1 = preprocessor.get_query_results(sql_query1)
         query_plan2 = preprocessor.get_query_plan(sql_query2)
-        # print(query_plan2)
-        # query_res2 = preprocessor.get_query_results(sql_query2)
-    
+        
+        query_res2 = preprocessor.get_query_results(sql_query2)
+        print(query_res2)
         #TODO: INTEGRATE: 
         # fetch query_plan result (valid or invalid + the error"
         # for the app

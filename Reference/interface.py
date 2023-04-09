@@ -294,7 +294,7 @@ class QEPAnalyzer(ttk.Window):
         self.title("CZ4031 QEP Analyzer")
         self.geometry("1400x800")
         self.option_add("*Font", FONT_REGULAR)
-        self.favicon_ico_path = 'Reference/app_icon.ico'
+        self.favicon_ico_path = 'Reference/database.ico'
         self.icon_photo = ImageTk.PhotoImage(
             Image.open(self.favicon_ico_path))
         self.iconphoto(False, self.icon_photo)
