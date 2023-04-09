@@ -2,6 +2,7 @@
 Contains code for preprocessing user inputs and data used in algorithm
 """
 
+import difflib
 import json
 import psycopg2
 import os
@@ -13,9 +14,28 @@ class Preprocessing:
         self.db = DBConnection()
 
     def get_query_results(self, sql_query):
+        """
+        Executes an SQL query and returns the query results.
+
+        If the SQL query does not contain a `LIMIT` clause, the method automatically adds a `LIMIT 20` clause to the query to limit the number of returned rows to 20.
+        Note that if the query returns a large number of rows, it may cause the application to crash due to memory constraints.
+        
+        Parameters:
+            sql_query (str): The SQL query to execute.
+
+        Returns:
+            list: A list of rows returned by the SQL query. Each row is represented as a tuple of column values.
+
+        Raises:
+            ValueError: If the input query is empty.
+        """
+
+        # check if query has a limit clause
+        if 'LIMIT' not in sql_query.upper():
+            # if not, add a limit clause to limit to 20 results
+            sql_query += ' LIMIT 20'
         output = self.validate(sql_query) 
         query_res = self.db.execute(sql_query)
-        # print(query_res)
         return query_res
     
     
@@ -75,7 +95,8 @@ class Preprocessing:
             return output
             
         return output
-
+    
+    
 class DBConnection:
     def __init__(self, db_config_path: str = 'config.json'):
         """Initializes a new instance of the 'Database' class
@@ -155,3 +176,7 @@ class DBConnection:
             print (e)
             return False
         return True
+    
+    import difflib
+
+    
