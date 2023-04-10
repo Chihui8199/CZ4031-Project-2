@@ -13,9 +13,8 @@ class Preprocessing:
         self.db = DBConnection()
 
     def get_query_results(self, sql_query):
-        output = self.validate(sql_query) 
+        output = self.validate_query(sql_query) 
         query_res = self.db.execute(sql_query)
-        # print(query_res)
         return query_res
     
     
@@ -36,45 +35,39 @@ class Preprocessing:
         """
         # TODO: 
         # CALL on front end raise value error 
-        
-        output = self.validate(sql_query) 
+        print("ENTERING GET QUERY PLAN")
+        is_query_valid = self.validate_query(sql_query) 
+        print("QUERY VALIDATION: ", is_query_valid)
         query_plan_res = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
         try:
             query_plan_res = query_plan_res[0][0][0]["Plan"]
         except Exception as e:
             query_plan_res = {}
             pass
-        
         return query_plan_res
 
-    def validate(self, query):
+    def validate_query(self, query):
         """
         Checks if the given query string is valid.
-
-        Args:
-            query (str): The query string to be validated.
-
         Returns:
             dict: A dictionary with the following keys:
-                - query (str): The original query string passed to the function.
                 - error (bool): Indicates if an error occurred during validation.
                 - error_message (str): The error message if an error occurred,
                 otherwise an empty string.
         """
-        output = {"query": query, "error": False, "error_message": ""}
-
+        result = {"error": False, "error_message": ""}
+        # checks if there's a query to execute
         if not len(query):
-            output["error"] = True
-            output["error_message"] = "Query is empty."
-            return output
-
-        if not self.db.query_valid(query):
-            print('Setting query output : invalid')
-            output["error"] = True
-            output["error_message"] = "Query is invalid."
-            return output
+            result["error_message"] = "There is no query to execute."
+            result["error"] = True
+            return result
+        # if query exists check that the query is a valid query
+        if not self.db.is_query_valid(query):
+            result["error_message"] = "The query cannot be executed and is invalid"
+            result["error"] = True
+            return result
             
-        return output
+        return result
 
 class DBConnection:
     def __init__(self, db_config_path: str = 'config.json'):
@@ -106,29 +99,6 @@ class DBConnection:
         self.conn = psycopg2.connect(host=self.host, port=self.port,database=self.database,user=self.user, password=self.password)
         self.cur = self.conn.cursor()
 
-    def wrap_single_transaction(func):
-        """Decorator to create cursor each time the function is called.
-
-        Args:
-            func (function): Function to be wrapped
-
-        Returns:
-            function: Wrapped function
-        """
-        @wraps(func)
-        def inner_func(self, *args, **kwargs):
-            try:
-                self.cur = self.conn.cursor()
-                ans = func(self, *args, **kwargs)
-                self.conn.commit()
-                return ans
-            except Exception as error:
-                print(f"Exception encountered, rolling back: {error}")
-                self.conn.rollback()
-
-        return inner_func
-    
-    @wrap_single_transaction
     def execute(self, query: str):
         """Executes a query on the database and returns the results.
         Args:
@@ -140,18 +110,17 @@ class DBConnection:
         except Exception as e:
             pass
 
-    @wrap_single_transaction
-    def query_valid(self, query: str):    
+    def is_query_valid(self, query: str):    
         """Fetches a single row from the database to check if the query is valid.
         Args:
             query (str): Query string that was entered by the user.
         Returns:
             boolean: true if query is valid, false otherwise.
         """
-        self.cur.execute(query)
         try:
+            self.cur.execute(query)
             self.cur.fetchone()
         except Exception as e:
-            print (e)
+            print ("Exception: is_query_valid:", e)
             return False
         return True
