@@ -177,15 +177,15 @@ class Application(ttk.Window):
         
         self.initial_query_plan_label = Label(self.initial_subframe, text="Initial Query:", font=FONT_UNDERLINE)
         self.initial_query_plan_label.configure(background='#2C3143', foreground='white')  
-        self.initial_query_plan_label.pack(padx = 20, pady = 10, expand = True, fill = BOTH)
-        self.initial_query_plan_text = Text(self.initial_subframe, width=60, height=50, wrap="word")
-        self.initial_query_plan_text.pack(padx = 40, pady = 20, expand = True, fill = BOTH)
+        self.initial_query_plan_label.pack(padx = 20, pady = 20, expand = True, fill = BOTH)
+        self.initial_query_plan_text = Text(self.initial_subframe, width=40, height=50, wrap="word")
+        self.initial_query_plan_text.pack(padx = 10, pady = 10, expand = True, fill = BOTH)
 
         self.new_query_plan_label = Label(self.new_subframe2, text="New Query:", font=FONT_UNDERLINE)
         self.new_query_plan_label.configure(background='#2C3143', foreground='white')  
-        self.new_query_plan_label.pack(padx = 20, pady = 10, expand = True, fill = BOTH)
-        self.new_query_plan_text = Text(self.new_subframe2, width=60, height=50, wrap="word")
-        self.new_query_plan_text.pack(padx = 40, pady = 20, expand = True, fill = BOTH)
+        self.new_query_plan_label.pack(padx = 20, pady = 20, expand = True, fill = BOTH)
+        self.new_query_plan_text = Text(self.new_subframe2, width=40, height=50, wrap="word")
+        self.new_query_plan_text.pack(padx = 10, pady = 10, expand = True, fill = BOTH)
 
         self.initial_subframe.pack(expand = True, fill = BOTH, side = LEFT)
         self.new_subframe2.pack(expand = True, fill = BOTH, side = LEFT)
@@ -268,6 +268,10 @@ class Application(ttk.Window):
                 self.initial_query_plan_text.config(state="normal")
                 self.initial_query_plan_text.delete('1.0', END)
                 imgInitial = Image.open("img/initialPlan.png")
+                w, h = imgInitial.size
+                ratio = min(self.initial_query_plan_text.winfo_width() / w, self.initial_query_plan_text.winfo_height() / h)
+                new_size = (int(w * ratio), int(h * ratio))
+                imgInitial = imgInitial.resize(new_size)
                 # resized_initial_image= imgInitial.resize((self.initial_query_plan_text.winfo_width(), self.initial_query_plan_text.winfo_height()))
                 # self.initial_img = ImageTk.PhotoImage(resized_initial_image)
                 self.initial_img = ImageTk.PhotoImage(imgInitial)
@@ -277,6 +281,10 @@ class Application(ttk.Window):
                 self.new_query_plan_text.config(state="normal")
                 self.new_query_plan_text.delete('1.0', END)
                 imgNew = Image.open("img/newPlan.png")
+                w, h = imgNew.size
+                ratio = min(self.new_query_plan_text.winfo_width() / w, self.new_query_plan_text.winfo_height() / h)
+                new_size = (int(w * ratio), int(h * ratio))
+                imgNew = imgNew.resize(new_size)
                 # resized_new_image= imgNew.resize((self.new_query_plan_text.winfo_width(), self.new_query_plan_text.winfo_height()))
                 # self.new_img = ImageTk.PhotoImage(resized_new_image)
                 self.new_img = ImageTk.PhotoImage(imgNew)
@@ -567,8 +575,9 @@ class Application(ttk.Window):
     def tableTab(self,query, container):
         for child in container.winfo_children():
             child.destroy() # Clean up sql output
+        preprocessor = preprocessing.Preprocessing()
 
-        actual_output, column_names  = self.preprocessor.get_query_results(query)
+        actual_output, column_names  = preprocessor.get_query_results(query)
 
         if (actual_output is None):
             self.analyze_btn.configure(state=ACTIVE)
