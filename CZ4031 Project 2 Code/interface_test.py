@@ -90,8 +90,6 @@ class Application(ttk.Window):
         }
         queries_selection = list(queries_text.keys())
 
-
-
         # Initial Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         self.sql_container1 = ttk.Frame(self.window_container_left,borderwidth=0)
@@ -119,8 +117,6 @@ class Application(ttk.Window):
 
         value1.trace('w', update_query1)
         self.query_1.insert('1.0',"select * from customer C, orders O where C.c_custkey = O.o_custkey")
-
-
 
         # New Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -194,32 +190,6 @@ class Application(ttk.Window):
         self.initial_subframe.pack(expand = True, fill = BOTH, side = LEFT)
         self.new_subframe2.pack(expand = True, fill = BOTH, side = LEFT)
 
-        # self.initial_query_plan_label = Label(self.subframe, text="Initial Query: ", font=FONT_NORMAL)
-        # self.initial_query_plan_label.configure(background='#2C3143', foreground='white')  
-        # # self.initial_query_plan_label.place(relx=0.5, rely=0.5,anchor=CENTER)      
-        # self.initial_query_plan_label.pack(padx=20,pady=20, expand=TRUE, fill = BOTH, side = LEFT)
-
-        # self.new_query_plan_label = Label(self.subframe2, text="New Query :", font=FONT_NORMAL)
-        # self.new_query_plan_label.configure(background='#2C3143', foreground='white')        
-        # self.new_query_plan_label.place(relx=0.5, rely=0.5,anchor=CENTER)     
-        # self.new_query_plan_label.pack(padx=20, pady=20, expand=TRUE, fill = BOTH, side = RIGHT)
-
-        # Inital Plan Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-        # self.initial_text_container = ttk.Frame(self.query_container,borderwidth=0)
-        # self.initial_text_container.pack(side= LEFT, fill=BOTH)
-        # self.initial_query_plan_text = Text(self.initial_text_container, width=60, height=50, wrap="word")
-        
-        # self.initial_query_plan_text.pack(pady=10, padx=10, side= LEFT, fill=BOTH)
-
-        # # New Plan Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        # self.new_text_container = ttk.Frame(self.query_container,borderwidth=0)
-        # self.new_text_container.pack(side= RIGHT, fill=BOTH)
-        # self.new_query_plan_text = Text(self.new_text_container, width=60, height=50, wrap="word")
-         
-        # self.new_query_plan_text.pack(pady=10, padx=10, side= RIGHT, fill=BOTH)
-
         # Analysis Tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         self.analysis_container = ttk.Frame(self.tabs_holders,borderwidth=0)
@@ -284,8 +254,8 @@ class Application(ttk.Window):
                 return
             
             # Get table output
-            # self.tableTab(self.initial_query,self.sql_output_container_initial)
-            # self.tableTab(self.new_query,self.sql_output_container_new)
+            self.tableTab(self.initial_query,self.sql_output_container_initial)
+            self.tableTab(self.new_query,self.sql_output_container_new)
             
             try:
                 # Generate Graph as images
