@@ -305,19 +305,34 @@ class Comparison:
                                 except ValueError:
                                     element_parts.append(index.strip("'"))
                             element = sql_query1
+                            
+                            for part in element_parts:
+                                print(part)
+                                if isinstance(element, list):
+                                    element = element[part]
+                                elif isinstance(element, dict):
+                                    element = element.get(part)
+                                else:
+                                    break
+                        
                             if isinstance(element, dict):
                                 element = element.get('literal')
                             if isinstance(element, str):
-                                conditions = [c.strip() for c in element.split('where')[1].split('and')]
+                                try:
+                                    conditions = [c.strip() for c in element.split('where')[1].split('and')]
+                                except:
+                                    conditions = [c.strip() for c in element.split('WHERE')[1].split('and')]
                             else:
                                 conditions = element
+                                
                             if 'new_value' in value and 'old_value' in value:
                                 old_value = value['old_value']
                                 new_value = value['new_value']
                                 for cond in conditions:
                                     if f"'{old_value}'" in cond and f"'{new_value}'" not in cond:
                                         column = cond.split()[0]
-                                        diffString += "\nThe " + column + "changed from " + old_value + "to" + new_value
+                                        diffString += "\nThe " + column + "changed from " + old_value + " to " + new_value
+                                        print(diffString)
                         else:
                             print(f"Unexpected key format: {key}")
 
