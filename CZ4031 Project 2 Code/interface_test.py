@@ -2,6 +2,11 @@ import tkinter as tk
 from tkinter import *
 from tkinter.scrolledtext import ScrolledText
 import ttkbootstrap as ttk
+
+from mo_sql_parsing import parse
+from pprint import pprint
+from deepdiff import DeepDiff
+
 # FONT SETTINGS
 FONT = "Arial"
 BOLD = "BOLD"
@@ -173,3 +178,208 @@ class Application(ttk.Window):
         # submit_button.pack()
 
 
+    
+class Comparison:
+    def __init__(self):
+        print("Looking for difference------------")
+    
+    def comparing(self,sql_query1, sql_query2):
+        
+        parsed_query1 = parse(sql_query1)
+        parsed_query2 = parse(sql_query2)
+        ddiff = DeepDiff(parsed_query1, parsed_query2)
+        difference = self.comparing_changes(ddiff, sql_query1,sql_query2,parsed_query1, parsed_query2)
+        return difference
+    
+    # single dict object of token
+    def token_parser(self,dict_tokens):
+        lhs = ''
+        rhs = ''
+        operator = ''
+        operator_types = {'eq': '=', 'lt': '<', 'gt': '>', 'ne': '!='}
+        for key, value in dict_tokens.items():
+            if key in operator_types:
+                operator = operator_types.get(key)
+            lhs = value[0]
+            rhsDict = value[1]
+            if isinstance(rhsDict, (int, float)):
+                rhs = rhsDict
+            else: 
+                for key, value in rhsDict.items():
+                    if key == 'literal':
+                        rhs =  rhsDict[key]
+        results = lhs + " " + operator + " " + rhs
+        return results
+
+    def cleaning_literal(self,value):
+        right_value = value[1]['literal'] if 'literal' in value[1] else value[1].split('.')[-1]
+        return value[0].split('.')[-1], right_value
+
+    def convert_to_and_of_or_with_and_of(self,clause):
+        and_clause = self.convert_and_clause(clause['and']) if 'and' in clause else ''
+        or_clause = self.convert_or_clause(clause['or']) if 'or' in clause else ''
+
+        if and_clause and or_clause:
+            return f"({and_clause}) OR ({or_clause})"
+        elif or_clause:
+            return f"({or_clause})"
+        else:
+            return and_clause
+
+    def convert_or_clause(self,or_clause):
+        or_parts = []
+        for or_cond in or_clause:
+            if 'and' in or_cond:
+                and_parts = []
+                for and_cond in or_cond['and']:
+                    and_parts.append(self.convert_and_condition(and_cond))
+                or_parts.append(f"({' AND '.join(and_parts)})")
+            else:
+                or_parts.append(self.convert_and_condition(or_cond))
+        return " OR ".join(or_parts)
+
+    def convert_and_clause(self,and_clause):
+        and_parts = []
+        for and_cond in and_clause:
+            and_parts.append(self.convert_and_condition(and_cond))
+        return " AND ".join(and_parts)
+
+    def convert_and_condition(self,and_cond):
+        conditions = []
+        for operator, operands in and_cond.items():
+            left, right = map(lambda x: x.split('.')[-1] if isinstance(x, str) else x['literal'], operands)
+            cleaned_right = self.cleaning_literal((left, right))[1]
+            if operator == 'eq':
+                conditions.append(f"{left} = {cleaned_right}")
+            elif operator == 'lt':
+                conditions.append(f"{left} < {cleaned_right}")
+            elif operator == 'gt':
+                conditions.append(f"{left} > {cleaned_right}")
+            elif operator == 'le':
+                conditions.append(f"{left} <= {cleaned_right}")
+            elif operator == 'ge':
+                conditions.append(f"{left} >= {cleaned_right}")
+            elif operator == 'ne':
+                conditions.append(f"{left} != {cleaned_right}")
+        return ' AND '.join(conditions)
+    
+    def find_token_changed(self, ddiff_obj):
+        results = set()
+        string_ddiff  = str(ddiff_obj).lower()
+        if "from" in string_ddiff.lower():
+            results.add("from")
+        if "where" in string_ddiff.lower():
+            results.add("where")
+        if "select" in string_ddiff.lower():
+            results.add("select")
+        if "group by" in string_ddiff.lower():
+            results.add("group by")
+        if "limit" in string_ddiff.lower():
+            results.add("limit")
+        if(len(results)>0):
+            joined_string = ", ".join(results)
+            return ("The tokens that are changed are in the "+ joined_string + " clause")
+        else:
+            return ("No clause are changed")
+
+
+    def comparing_changes(self,ddiff, sql_query1, sql_query2,parsed_query1,parsed_query2):
+        diffString=''
+        try:
+            #If no changes
+            token_changed_string = self.find_token_changed(ddiff)
+            if ddiff  == {}:
+                print("No changes were made in Query 2")
+            elif (('select' or 'from') in str(ddiff)):
+                diffString += token_changed_string
+            else:
+                if 'values_changed' in ddiff:
+                    for key, value in ddiff['values_changed'].items():
+                        if key.startswith("root[") and key.endswith("]['literal']"):
+                            element_parts = []
+                            for part in key.split("[")[1:]:
+                                index = part.split("]")[0]
+                                try:
+                                    index = int(index)
+                                    element_parts.append(index)
+                                except ValueError:
+                                    element_parts.append(index.strip("'"))
+                            element = sql_query1
+                            if isinstance(element, dict):
+                                element = element.get('literal')
+                            if isinstance(element, str):
+                                conditions = [c.strip() for c in element.split('where')[1].split('and')]
+                            else:
+                                conditions = element
+                            if 'new_value' in value and 'old_value' in value:
+                                old_value = value['old_value']
+                                new_value = value['new_value']
+                                for cond in conditions:
+                                    if f"'{old_value}'" in cond and f"'{new_value}'" not in cond:
+                                        column = cond.split()[0]
+                                        diffString += "\nThe " + column + "changed from " + old_value + "to" + new_value
+                        else:
+                            print(f"Unexpected key format: {key}")
+
+                if 'iterable_item_added' in ddiff:
+                    iterable_values = ddiff['iterable_item_added']
+                    for key, value in iterable_values.items():
+                        results = self.token_parser(value)
+                        diffString += "\nThere is a new statement added in the where clause" + results
+
+                if 'iterable_item_removed' in ddiff:
+                    iterable_values = ddiff['iterable_item_removed']
+                    for key, value in iterable_values.items():
+                        results = self.token_parser(value)
+                        diffString += "\nThere is a statement removed in the where" + results
+
+                where_clause1 = parsed_query1['where']
+                where_clause2 = parsed_query2['where']
+                AddToOne = False
+                if len(str(where_clause1)) < len(str(where_clause2)):
+                    AddToOne = True
+
+                #Q1-> Q2 has an addition of dictionary item
+                if ('dictionary_item_added' in ddiff and AddToOne == True):
+                    where_clause1 = parsed_query1['where']
+                    where_clause2 = parsed_query2['where']
+                    
+                    converted_clause1 = self.convert_to_and_of_or_with_and_of(where_clause1)
+                    converted_clause2 = self.convert_to_and_of_or_with_and_of(where_clause2)
+
+                    added_item = ddiff['dictionary_item_added'][0] # get the first dictionary in the list
+                    
+                    key_parts = added_item.split('[')  # split the string at '[' characters
+                    key_parts = [part.strip('"]') for part in key_parts]  # remove leading/trailing '"' characters
+                    where_op = key_parts[-1]  # get the last element of the list, which should be the oper
+
+                    diffString += "\nAddition of " + where_op + " condition to query 2\nQuery 1: " + \
+                                str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
+
+                #Q1-> Q2 has a dictionary item removed
+                elif  ('dictionary_item_removed' in ddiff and AddToOne==False):
+                    where_clause1 = parsed_query1['where']
+                    where_clause2 = parsed_query2['where']
+                    removed_item = ddiff['dictionary_item_removed'][0] # get the first dictionary in the list
+                    
+                    key_parts = removed_item.split('[')  # split the string at '[' characters
+                    key_parts = [part.strip('"]') for part in key_parts]  # remove leading/trailing '"' characters
+                    where_op = key_parts[-1]  # get the last element of the list, which should be the oper
+
+                    converted_clause1 = self.convert_to_and_of_or_with_and_of(where_clause1)
+                    converted_clause2 = self.convert_to_and_of_or_with_and_of(where_clause2)
+
+                    diffString += "\nRemoved " + where_op + " condition to query 2\nQuery 1: " + \
+                                str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
+
+        except Exception as e:
+            diffString = self.find_token_changed(ddiff)
+
+        return diffString 
+
+        
+
+
+    
+
+    
