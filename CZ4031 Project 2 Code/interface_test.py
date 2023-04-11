@@ -20,12 +20,13 @@ from ttkbootstrap.tableview import Tableview
 
 # FONT SETTINGS
 FONT = "Helvetica"
+FONT_MONSTERRAT = "Palatino"
 BOLD = "BOLD"
 ITALIC = "ITALIC"
 UNDERLINE = "UNDERLINE"
 FONT_NORMAL = (FONT, 18)
-FONT_BOLD = (f"{FONT} {BOLD}", 12)
-FONT_TITLE = (f"{FONT} {BOLD}", 40)
+FONT_BOLD = (f"{FONT} {BOLD}", 20)
+FONT_TITLE = (f"{FONT_MONSTERRAT} {BOLD}", 40)
 FONT_UNDERLINE = (f"{FONT} {UNDERLINE}", 18)
 FONT_CREDITS = (f"{FONT} {ITALIC}", 10)
 
@@ -583,6 +584,7 @@ class Application(ttk.Window):
             self.analyze_btn.configure(state=ACTIVE)
             return
         elif (len(actual_output) == 0):
-            ttk.Label(container, text = "No results matching.", font=FONT_BOLD).pack(fill=tk.X, padx=20, pady=10, anchor=CENTER)
+            self.no_results = ttk.Label(container, text="No results matching the query provided.", font=FONT_BOLD, anchor=CENTER, background="#2C3143", foreground='white')
+            self.no_results.pack(fill=tk.X, pady=[30,30])
         else:
             self.createTableOutput(actual_output, column_names, container) 

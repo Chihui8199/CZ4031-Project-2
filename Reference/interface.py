@@ -434,8 +434,6 @@ class QEPAnalyzer(ttk.Window):
                 ttk.Label(self.sql_output_container, text = "No results matching.", font=FONT_BOLD).pack(fill=tk.X, padx=20, pady=10, anchor=CENTER)
             else:
                 self.create_table_view(actual_output) 
-        else:
-            ttk.Label(self.sql_output_container, text = "Please select option to display SQL output in [Query] tab.", font=FONT_BOLD).pack(fill=tk.X, padx=20, pady=10, anchor=CENTER)
 
 
         # Send execute the EXPLAIN query
