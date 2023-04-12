@@ -13,9 +13,10 @@ class Preprocessing:
         self.db = DBConnection()
 
     def get_query_results(self, sql_query):
-        output = self.validate_query(sql_query) 
-        query_res = self.db.execute(sql_query)
-        return query_res
+        output = self.validate(sql_query) 
+        query_res, column_names = self.db.execute(sql_query)
+        # print(query_res)
+        return query_res, column_names
     
     
     def get_query_plan(self, sql_query):
@@ -39,6 +40,9 @@ class Preprocessing:
         is_query_valid = self.validate_query(sql_query) 
         print("QUERY VALIDATION: ", is_query_valid)
         query_plan_res = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
+        #output = self.validate(sql_query) 
+        #query_plan_res,b = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
+
         try:
             query_plan_res = query_plan_res[0][0][0]["Plan"]
         except Exception as e:
@@ -105,8 +109,10 @@ class DBConnection:
         """
         try:
             self.cur.execute(query)
+            column_names = [description[0] for description in self.cur.description]
+            print(column_names)
             query_results = self.cur.fetchall()
-            return query_results
+            return query_results, column_names
         except Exception as e:
             pass
 
