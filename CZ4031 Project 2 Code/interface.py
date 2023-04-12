@@ -44,10 +44,10 @@ class Application(ttk.Window):
         self.configure(bg='#2C3143')
         
         # set application icon
-        self.favicon_ico_path = 'img/cool.ico'
-        self.icon_photo = ImageTk.PhotoImage(
-        Image.open(self.favicon_ico_path))
-        self.iconphoto(False, self.icon_photo)
+        #self.favicon_ico_path = 'img/cool.ico'
+        # self.icon_photo = ImageTk.PhotoImage(
+        # Image.open(self.favicon_ico_path))
+        # self.iconphoto(False, self.icon_photo)
 
     
     def generate_UI(self):
@@ -331,7 +331,6 @@ class Application(ttk.Window):
 
         comparing = explain.Comparison()
         updated_clause = comparing.comparing(initial, new)
-        
         
         if updated_clause == None:
             messagebox.showerror("showwarning", "SQL Queries are the same, please ensure they are different!")

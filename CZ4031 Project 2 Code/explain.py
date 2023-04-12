@@ -207,7 +207,6 @@ class Comparison:
         print("Looking for difference------------")
     
     def comparing(self,sql_query1, sql_query2):
-        
         parsed_query1 = parse(sql_query1)
         parsed_query2 = parse(sql_query2)
         ddiff = DeepDiff(parsed_query1, parsed_query2)
@@ -290,19 +289,23 @@ class Comparison:
     def find_token_changed(self, ddiff_obj):
         results = set()
         string_ddiff  = str(ddiff_obj).lower()
-        if "from" in string_ddiff.lower():
+        if "from" in string_ddiff:
             results.add("from")
-        if "where" in string_ddiff.lower():
+        if "where" in string_ddiff:
             results.add("where")
-        if "select" in string_ddiff.lower():
+        if "select" in string_ddiff:
             results.add("select")
-        if "group by" in string_ddiff.lower():
+        if "groupby" in string_ddiff:
             results.add("group by")
-        if "limit" in string_ddiff.lower():
+        if "limit" in string_ddiff:
             results.add("limit")
+        if "having" in string_ddiff:
+            results.add("having")
+        if "orderby" in string_ddiff:
+            results.add("order by") 
         if(len(results)>0):
             joined_string = ", ".join(results)
-            return ("The tokens that are changed are in the "+ joined_string + " clause")
+            return ("The tokens that are changed are in the " + joined_string + " clause")
         else:
             return ("No clause are changed")
 

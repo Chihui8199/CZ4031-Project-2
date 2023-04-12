@@ -1,7 +1,7 @@
 {
     "host": "localhost",
     "port": "5432",
-    "database": "cz4031",
-    "user": "postgres",
-    "password": "63632625"
+    "database": "TPC-H",
+    "user": "chihui",
+    "password": "inqh8199"
 }
