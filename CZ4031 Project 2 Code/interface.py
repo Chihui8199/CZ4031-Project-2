@@ -210,7 +210,13 @@ class Application(ttk.Window):
         
         self.login_window = Toplevel(self.window_container)
         self.login_window.title("Login")
-        self.login_window.geometry("400x300")
+        width = 300
+        height = 240
+        screen_width = self.window_container.winfo_screenwidth()
+        screen_height = self.window_container.winfo_screenheight()
+        x_coordinate = (screen_width / 2) - (width / 2)
+        y_coordinate = (screen_height / 2) - (height / 2)
+        self.login_window.geometry("%dx%d+%d+%d" % (width, height, x_coordinate, y_coordinate))
 
         # Create a background image
         # background_image = Image.open("img/background.png")
@@ -273,8 +279,19 @@ class Application(ttk.Window):
         # Focus the username entry widget
         self.host_entry.focus_set()
         
+        # self.blur_effect = Image.open("img/background_image.jpg").filter(ImageFilter.GaussianBlur(10))
+        # self.blur_photo = ImageTk.PhotoImage(self.blur_effect)
+        # self.blur_effect.save("blurred_image.jpg")
+        
+        # self.parent_canvas = Canvas(self.window_container, width=self.window_container.winfo_width(), height=self.window_container.winfo_height())
+        # self.parent_canvas.pack(fill=BOTH, expand=True)
+        # self.parent_canvas.create_image(0, 0, image=self.blur_photo, anchor=NW)
+
+
         # Bind the <Return> key to the login method
         self.login_window.bind("<Return>", self.login)
+        self.login_window.protocol("WM_DELETE_WINDOW", lambda: None)
+
 
     def login(self, event=None):
         self.configList = [self.host_entry.get(),
@@ -285,6 +302,7 @@ class Application(ttk.Window):
         try:
             preprocessor = explain.Preprocessing(self.configList)
             messagebox.showinfo("Login", "You are now logged in!")
+            self.login_window.protocol("WM_DELETE_WINDOW", None)
             self.login_window.destroy()
         except Exception as e:
             print(e)
