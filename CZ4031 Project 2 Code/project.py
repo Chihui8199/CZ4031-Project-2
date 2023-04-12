@@ -19,8 +19,8 @@ if __name__ == '__main__':
         sql_query2 = "SELECT  l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue " \
             "FROM customer, orders, lineitem " \
             "WHERE customer.c_custkey = orders.o_orderkey " \
-            "AND lineitem.l_orderkey = orders.o_orderkey " \
-            "AND customer.c_nationkey = '4'"\
+            "OR lineitem.l_orderkey = orders.o_orderkey " \
+            "AND l_shipdate < '14/11/2022'" \
             "GROUP BY l_orderkey, o_orderdate, o_shippriority " \
             "ORDER BY revenue DESC, o_orderdate " \
             "LIMIT 20;"

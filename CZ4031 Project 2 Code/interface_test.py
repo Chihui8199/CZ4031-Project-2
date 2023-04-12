@@ -426,8 +426,6 @@ class Application(ttk.Window):
                     orderby_clause_new = clause_new
                     print(orderby_clause_initial)
                     print(orderby_clause_new)
-
-            
         else:
             print("WHERE clause not found.")
 
@@ -693,8 +691,7 @@ class Comparison:
             return ("There are changes in these clause: "+ joined_string)
         else:
             return ("No clause are changed")
-
-
+        
     def comparing_changes(self,ddiff, sql_query1, sql_query2,parsed_query1,parsed_query2):
         diffString=''
         try:
@@ -705,7 +702,6 @@ class Comparison:
             elif(any(s in token_changed_string for s in ['select', 'from', 'group by', 'limit'])):
                 diffString += token_changed_string
             else:
-                
                 diffString += token_changed_string
                 if 'values_changed' in ddiff:
                     for key, value in ddiff['values_changed'].items():
@@ -745,7 +741,7 @@ class Comparison:
                                 for cond in conditions:
                                     if f"'{old_value}'" in cond and f"'{new_value}'" not in cond:
                                         column = cond.split()[0]
-                                        diffString += "\nThe " + column + "changed from " + old_value + " to " + new_value + "in the where condition"
+                                        diffString += "\nThe " + column + " changed from " + old_value + " to " + new_value + "in the where condition"
                         # elif key.startswith("root[") :
                         else:
                             print(f"Unexpected key format: {key}")
