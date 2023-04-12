@@ -45,7 +45,6 @@ class Preprocessing:
     def get_query_results(self, sql_query):
         output = self.validate_query(sql_query) 
         query_res, column_names = self.db.execute(sql_query)
-        # print(query_res)
         return query_res, column_names
     
     
@@ -64,26 +63,15 @@ class Preprocessing:
         Raises:
             ValueError: If the provided SQL query is invalid.
         """
-        # TODO: 
-        # CALL on front end raise value error 
-        print("ENTERING GET QUERY PLAN")
+        # TODO: Implement this method in front end for error validation
         is_query_valid = self.validate_query(sql_query) 
-        print("QUERY VALIDATION: ", is_query_valid)
         query_plan_res = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
-        # print(query_plan_res[0][0][0])
-        
-        #output = self.validate(sql_query) 
-        #query_plan_res,b = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
-        
         try:
-            print("_3242354346757",query_plan_res[0][0][0][0]['Plan'])
             query_plan_res = query_plan_res[0][0][0][0]['Plan']
-            
             
         except Exception as e:
             query_plan_res = {}
             pass
-        print(query_plan_res)
         return query_plan_res
 
     def validate_query(self, query):
@@ -125,14 +113,6 @@ class DBConnection:
             ValueError: If the config.json fi
         
         """
-       
-        # dir_path = os.path.dirname(os.path.realpath(__file__))
-        # db_config_path = os.path.join(dir_path, "config.json")
-
-        # with open(db_config_path, "r") as file:
-        #     config_dict = json.load(file)
-        # try:
-        print("AHHHHHHHHH",configList)
         self.host = configList[0]
         self.port = configList[1]
         self.database = configList[2]
@@ -140,11 +120,6 @@ class DBConnection:
         self.password = configList[4]
         self.conn = psycopg2.connect(host=self.host, port=self.port,database=self.database,user=self.user, password=self.password)
         self.cur = self.conn.cursor()
-        # except Exception as e:
-        #     print("err")
-        #     # print("hello", self.conn)
-        #     # print(self.cur)
-        #     print("Database Connection failed!")
 
     def execute(self, query: str):
         """Executes a query on the database and returns the results.
@@ -153,7 +128,6 @@ class DBConnection:
         try:
             self.cur.execute(query)
             column_names = [description[0] for description in self.cur.description]
-            print(column_names)
             query_results = self.cur.fetchall()
             return query_results, column_names
         except Exception as e:
@@ -210,7 +184,6 @@ class Comparison:
         parsed_query2 = parse(sql_query2)
         ddiff = DeepDiff(parsed_query1, parsed_query2)
         difference = self.comparing_changes(ddiff, sql_query1,sql_query2,parsed_query1, parsed_query2)
-        print("\n\n\n\n",difference,"\n\n\n\n")
         return difference
     
     # single dict object of token
@@ -315,7 +288,7 @@ class Comparison:
             #If no changes
             token_changed_string = self.find_token_changed(ddiff)
             if ddiff  == {}:
-                print("No changes were made in Query 2")
+                diffString += "No changes"
             elif(any(s in token_changed_string for s in ['select', 'from', 'group by', 'limit'])):
                 diffString += token_changed_string
             else:
@@ -359,19 +332,16 @@ class Comparison:
                                     if f"'{old_value}'" in cond and f"'{new_value}'" not in cond:
                                         column = cond.split()[0]
                                         diffString += "\nThe " + column + " changed from " + old_value + " to " + new_value + "in the where condition"
-                        # elif key.startswith("root[") :
                         else:
                             print(f"Unexpected key format: {key}")
 
                 if 'iterable_item_added' in ddiff:
-                    print("ENTERING ITERABLE ADDED")
                     iterable_values = ddiff['iterable_item_added']
                     for key, value in iterable_values.items():
                         results = self.token_parser(value)
                         diffString += "\nThere is a new statement added in the where clause " + results
 
                 if 'iterable_item_removed' in ddiff:
-                    print("ADDING ITERABLE REMOVED")
                     iterable_values = ddiff['iterable_item_removed']
                     for key, value in iterable_values.items():
                         results = self.token_parser(value)
@@ -385,7 +355,6 @@ class Comparison:
 
                 #Q1-> Q2 has an addition of dictionary item
                 if ('dictionary_item_added' in ddiff and AddToOne == True):
-                    print("ENTERING DICT ITEM ADDED")
                     where_clause1 = parsed_query1['where']
                     where_clause2 = parsed_query2['where']
                     
@@ -406,7 +375,6 @@ class Comparison:
 
                 #Q1-> Q2 has a dictionary item removed
                 elif  ('dictionary_item_removed' in ddiff and AddToOne==False):
-                    print("ENTERING DICT ITEM REMOVED")
                     where_clause1 = parsed_query1['where']
                     where_clause2 = parsed_query2['where']
                     removed_item = ddiff['dictionary_item_removed'][0] # get the first dictionary in the list
@@ -426,7 +394,6 @@ class Comparison:
                                     str(converted_clause1)
                      
         except Exception as e:
-            print(e,"error5 *")
             diffString = self.find_token_changed(ddiff)
 
         return diffString 
