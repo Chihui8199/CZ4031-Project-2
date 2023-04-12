@@ -1,8 +1,10 @@
 psycopg2-binary==2.9.5
 sql_metadata
-tkinter
+tk
 ttkbootstrap
 sqlparse
 pyodbc
 graphviz
+mo_sql_parsing
+deepdiff
 # https://graphviz.org/download/ need to add this in read me file

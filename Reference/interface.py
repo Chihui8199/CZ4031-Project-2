@@ -17,6 +17,7 @@ import psycopg2
 import sqlparse
 
 
+
 #logger.py
 colorama.init(autoreset=True)  # auto reset color back to default after printing
 
