@@ -1,22 +1,21 @@
-import difflib
 import re
 import tkinter as tk
 from tkinter import *
 from tkinter import font
 from tkinter import messagebox
 from tkinter.scrolledtext import ScrolledText
-import string
 from tkinter.tix import IMAGETEXT
 import ttkbootstrap as ttk
-import sqlparse
 from preprocessing import *
 # import pyodbc
-import sql_metadata
 import preprocessing
-import json
 import annotation
 from PIL import ImageTk, Image
 from ttkbootstrap.tableview import Tableview
+
+from mo_sql_parsing import parse as sqlparser
+from pprint import pprint
+from deepdiff import DeepDiff
 
 # FONT SETTINGS
 FONT = "Helvetica"
@@ -597,9 +596,8 @@ class Comparison:
         print("Looking for difference------------")
     
     def comparing(self,sql_query1, sql_query2):
-        
-        parsed_query1 = parse(sql_query1)
-        parsed_query2 = parse(sql_query2)
+        parsed_query1 = sqlparser(sql_query1)
+        parsed_query2 = sqlparser(sql_query2)
         ddiff = DeepDiff(parsed_query1, parsed_query2)
         difference = self.comparing_changes(ddiff, sql_query1,sql_query2,parsed_query1, parsed_query2)
         return difference
