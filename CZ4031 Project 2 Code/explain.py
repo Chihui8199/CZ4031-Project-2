@@ -90,8 +90,9 @@ class Preprocessing:
             result["error"] = True
             return result
         # if query exists check that the query is a valid query
-        if not self.db.is_query_valid(query):
-            result["error_message"] = "The query cannot be executed and is invalid"
+        isValid, error = self.db.is_query_valid(query)
+        if not isValid:
+            result["error_message"] = f"The query cannot be executed and is invalid. \n Error: {error}"
             result["error"] = True
             return result
             
@@ -145,8 +146,8 @@ class DBConnection:
             self.cur.fetchone()
         except Exception as e:
             print ("Exception: is_query_valid:", e)
-            return False
-        return True
+            return False, e
+        return True, None
 
 class CalculateCost:
     def __init__(self):
