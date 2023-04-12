@@ -461,7 +461,7 @@ class Application(ttk.Window):
 
                 except Exception as e:
                     traceback.print_exc()
-                    messagebox.showerror("showwarning", "SQL Query is invalid, please try again!")
+                    messagebox.showerror("showwarning", "Both Queries are the same!")
                     
 
     # Search for all Joins, Relations and Scan type for a plan
