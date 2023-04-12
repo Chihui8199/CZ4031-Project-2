@@ -5,7 +5,6 @@ Contains code for preprocessing user inputs and data used in algorithm
 import json
 import psycopg2
 import os
-from functools import wraps
 from graphviz import Digraph
 from mo_sql_parsing import parse
 from pprint import pprint

@@ -1,5 +1,3 @@
-import difflib
-import re
 import tkinter as tk
 from tkinter import *
 from tkinter import font
@@ -8,17 +6,11 @@ from tkinter.scrolledtext import ScrolledText
 import string
 from tkinter.tix import IMAGETEXT
 import ttkbootstrap as ttk
-import sqlparse
 from explain import *
-# import pyodbc
-import sql_metadata
-# import preprocessing
-import json
 import explain 
 from PIL import ImageTk, Image, ImageFilter
 from ttkbootstrap.tableview import Tableview
 import traceback
-
 
 # FONT SETTINGS
 FONT = "Helvetica"
@@ -44,7 +36,8 @@ class Application(ttk.Window):
         self.configure(bg='#2C3143')
         
         # set application icon
-        #self.favicon_ico_path = 'img/cool.ico'
+        # TODO: uncomment this to set application icon (currently not working)
+        # self.favicon_ico_path = 'img/cool.ico'
         # self.icon_photo = ImageTk.PhotoImage(
         # Image.open(self.favicon_ico_path))
         # self.iconphoto(False, self.icon_photo)
@@ -331,6 +324,7 @@ class Application(ttk.Window):
 
         comparing = explain.Comparison()
         updated_clause = comparing.comparing(initial, new)
+        
         
         if updated_clause == None:
             messagebox.showerror("showwarning", "SQL Queries are the same, please ensure they are different!")
