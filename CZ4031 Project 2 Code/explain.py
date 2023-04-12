@@ -5,7 +5,6 @@ Contains code for preprocessing user inputs and data used in algorithm
 import json
 import psycopg2
 import os
-from functools import wraps
 from graphviz import Digraph
 from mo_sql_parsing import parse
 from pprint import pprint
@@ -207,7 +206,6 @@ class Comparison:
         print("Looking for difference------------")
     
     def comparing(self,sql_query1, sql_query2):
-        
         parsed_query1 = parse(sql_query1)
         parsed_query2 = parse(sql_query2)
         ddiff = DeepDiff(parsed_query1, parsed_query2)
@@ -273,7 +271,7 @@ class Comparison:
         for operator, operands in and_cond.items():
             left, right = map(lambda x: x.split('.')[-1] if isinstance(x, str) else x['literal'], operands)
             cleaned_right = self.cleaning_literal((left, right))[1]
-            if operator == 'eq':
+            if ((operator == 'eq') or  (operator == 'like')):
                 conditions.append(f"{left} = {cleaned_right}")
             elif operator == 'lt':
                 conditions.append(f"{left} < {cleaned_right}")
@@ -290,19 +288,23 @@ class Comparison:
     def find_token_changed(self, ddiff_obj):
         results = set()
         string_ddiff  = str(ddiff_obj).lower()
-        if "from" in string_ddiff.lower():
+        if "from" in string_ddiff:
             results.add("from")
-        if "where" in string_ddiff.lower():
+        if "where" in string_ddiff:
             results.add("where")
-        if "select" in string_ddiff.lower():
+        if "select" in string_ddiff:
             results.add("select")
-        if "group by" in string_ddiff.lower():
+        if "groupby" in string_ddiff:
             results.add("group by")
-        if "limit" in string_ddiff.lower():
+        if "limit" in string_ddiff:
             results.add("limit")
+        if "having" in string_ddiff:
+            results.add("having")
+        if "orderby" in string_ddiff:
+            results.add("order by") 
         if(len(results)>0):
             joined_string = ", ".join(results)
-            return ("The tokens that are changed are in the "+ joined_string + " clause")
+            return ("The tokens that are changed are in the " + joined_string + " clause")
         else:
             return ("No clause are changed")
 
@@ -314,12 +316,13 @@ class Comparison:
             token_changed_string = self.find_token_changed(ddiff)
             if ddiff  == {}:
                 print("No changes were made in Query 2")
-                return None
-            elif (('select' or 'from') in str(ddiff)):
+            elif(any(s in token_changed_string for s in ['select', 'from', 'group by', 'limit'])):
                 diffString += token_changed_string
             else:
+                diffString += token_changed_string
                 if 'values_changed' in ddiff:
                     for key, value in ddiff['values_changed'].items():
+                        #only for string changes
                         if key.startswith("root[") and key.endswith("]['literal']"):
                             element_parts = []
                             for part in key.split("[")[1:]:
@@ -332,7 +335,6 @@ class Comparison:
                             element = sql_query1
                             
                             for part in element_parts:
-                                print(part)
                                 if isinstance(element, list):
                                     element = element[part]
                                 elif isinstance(element, dict):
@@ -356,22 +358,24 @@ class Comparison:
                                 for cond in conditions:
                                     if f"'{old_value}'" in cond and f"'{new_value}'" not in cond:
                                         column = cond.split()[0]
-                                        diffString += "\nThe " + column + "changed from " + old_value + " to " + new_value
-                                        print(diffString)
+                                        diffString += "\nThe " + column + " changed from " + old_value + " to " + new_value + "in the where condition"
+                        # elif key.startswith("root[") :
                         else:
                             print(f"Unexpected key format: {key}")
 
                 if 'iterable_item_added' in ddiff:
+                    print("ENTERING ITERABLE ADDED")
                     iterable_values = ddiff['iterable_item_added']
                     for key, value in iterable_values.items():
                         results = self.token_parser(value)
-                        diffString += "\nThere is a new statement added in the where clause" + results
+                        diffString += "\nThere is a new statement added in the where clause " + results
 
                 if 'iterable_item_removed' in ddiff:
+                    print("ADDING ITERABLE REMOVED")
                     iterable_values = ddiff['iterable_item_removed']
                     for key, value in iterable_values.items():
                         results = self.token_parser(value)
-                        diffString += "\nThere is a statement removed in the where" + results
+                        diffString += "\nThere is a statement removed in the where " + results
 
                 where_clause1 = parsed_query1['where']
                 where_clause2 = parsed_query2['where']
@@ -381,23 +385,28 @@ class Comparison:
 
                 #Q1-> Q2 has an addition of dictionary item
                 if ('dictionary_item_added' in ddiff and AddToOne == True):
+                    print("ENTERING DICT ITEM ADDED")
                     where_clause1 = parsed_query1['where']
                     where_clause2 = parsed_query2['where']
                     
                     converted_clause1 = self.convert_to_and_of_or_with_and_of(where_clause1)
                     converted_clause2 = self.convert_to_and_of_or_with_and_of(where_clause2)
-
+                    
                     added_item = ddiff['dictionary_item_added'][0] # get the first dictionary in the list
                     
                     key_parts = added_item.split('[')  # split the string at '[' characters
                     key_parts = [part.strip('"]') for part in key_parts]  # remove leading/trailing '"' characters
                     where_op = key_parts[-1]  # get the last element of the list, which should be the oper
 
-                    diffString += "\nAddition of " + where_op + " condition to query 2\nQuery 1: " + \
+                    if (converted_clause1)=='':
+                        diffString += "\nAddition of " + where_op + " condition to query 2 \n" + str(converted_clause2)
+                    else:
+                        diffString += "\nAddition of " + where_op + " condition to query 2 \nQuery 1: " + \
                                 str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
 
                 #Q1-> Q2 has a dictionary item removed
                 elif  ('dictionary_item_removed' in ddiff and AddToOne==False):
+                    print("ENTERING DICT ITEM REMOVED")
                     where_clause1 = parsed_query1['where']
                     where_clause2 = parsed_query2['where']
                     removed_item = ddiff['dictionary_item_removed'][0] # get the first dictionary in the list
@@ -408,10 +417,14 @@ class Comparison:
 
                     converted_clause1 = self.convert_to_and_of_or_with_and_of(where_clause1)
                     converted_clause2 = self.convert_to_and_of_or_with_and_of(where_clause2)
-
-                    diffString += "\nRemoved " + where_op + " condition to query 2\nQuery 1: " + \
-                                str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
-
+                    
+                    if converted_clause2 != '':
+                        diffString += "\nRemoved " + where_op + " condition from query 2\nQuery 1: " + \
+                                    str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
+                    else:
+                        diffString += "\nRemoved " + where_op + " condition from query 2\n " + \
+                                    str(converted_clause1)
+                     
         except Exception as e:
             print(e,"error5 *")
             diffString = self.find_token_changed(ddiff)
