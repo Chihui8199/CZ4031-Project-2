@@ -217,7 +217,13 @@ class Application(ttk.Window):
         
         self.login_window = Toplevel(self.window_container)
         self.login_window.title("Login")
-        self.login_window.geometry("400x300")
+        width = 300
+        height = 240
+        screen_width = self.window_container.winfo_screenwidth()
+        screen_height = self.window_container.winfo_screenheight()
+        x_coordinate = (screen_width / 2) - (width / 2)
+        y_coordinate = (screen_height / 2) - (height / 2)
+        self.login_window.geometry("%dx%d+%d+%d" % (width, height, x_coordinate, y_coordinate))
 
         # Create a background image
         # background_image = Image.open("img/background.png")
