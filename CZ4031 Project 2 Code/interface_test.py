@@ -497,15 +497,17 @@ class Application(ttk.Window):
             scan_dict[relations] = scan
     
         join_dict = {}
-
+        joincount=0
         # Make a join dictionary that connects Join to Relations based on joinOrder
         for join in joinList:
             tempList = []
+            joincount+=1
             for relations in relationList:
                 if join[0] <= relations[0]:
                     tempList.append(relations[1])
-            join_dict[join[1]] = tempList
+            join_dict[join[1]+str(joincount)] = tempList
 
+        
         # Remove duplicate relations in join_dict
         for join in join_dict:
 
@@ -529,21 +531,21 @@ class Application(ttk.Window):
         # Print out join relations
         for join in join_dict:
             try:
-                joinString = f"\n{join} was used between '{join_dict[join][0]}'({scan_dict[join_dict[join][0]]}) and '{join_dict[join][1]}'({scan_dict[join_dict[join][1]]})\n"
+                joinString = f"\n{join[:-1]} was used between '{join_dict[join][0]}'({scan_dict[join_dict[join][0]]}) and '{join_dict[join][1]}'({scan_dict[join_dict[join][1]]})\n"
                 listToReturn.append(joinString)
                 self.analysis_text.insert(END, joinString, ("body",) )
             except Exception as e:
                 try:
-                    joinString = f"\n{join} was used between '{join_dict[join][0]}'({scan_dict[join_dict[join][0]]}) and '{join_dict[join][1]}'\n"
+                    joinString = f"\n{join[:-1]} was used between '{join_dict[join][0]}'({scan_dict[join_dict[join][0]]}) and '{join_dict[join][1]}'\n"
                     listToReturn.append(joinString)
                     self.analysis_text.insert(END, joinString, ("body",))
 
                 except Exception as e:
-                    joinString = f"\n{join} was used between '{join_dict[join][0]}' and '{join_dict[join][1]}'\n"
+                    joinString = f"\n{join[:-1]} was used between '{join_dict[join][0]}' and '{join_dict[join][1]}'\n"
                     listToReturn.append(joinString)
                     self.analysis_text.insert(END, joinString, ("body",))
 
-        self.analysis_text.tag_configure("body", font=body_font)      
+        self.analysis_text.tag_configure("body", font=body_font) 
         return listToReturn
               
     def createTableOutput(self, output, columns, container):
