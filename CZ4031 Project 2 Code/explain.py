@@ -273,7 +273,7 @@ class Comparison:
         for operator, operands in and_cond.items():
             left, right = map(lambda x: x.split('.')[-1] if isinstance(x, str) else x['literal'], operands)
             cleaned_right = self.cleaning_literal((left, right))[1]
-            if operator == 'eq':
+            if ((operator == 'eq') or  (operator == 'like')):
                 conditions.append(f"{left} = {cleaned_right}")
             elif operator == 'lt':
                 conditions.append(f"{left} < {cleaned_right}")
@@ -356,7 +356,7 @@ class Comparison:
                                 for cond in conditions:
                                     if f"'{old_value}'" in cond and f"'{new_value}'" not in cond:
                                         column = cond.split()[0]
-                                        diffString += "\nThe " + column + "changed from " + old_value + " to " + new_value
+                                        diffString += "\nThe " + column + " changed from " + old_value + " to " + new_value
                                         print(diffString)
                         else:
                             print(f"Unexpected key format: {key}")
@@ -365,13 +365,13 @@ class Comparison:
                     iterable_values = ddiff['iterable_item_added']
                     for key, value in iterable_values.items():
                         results = self.token_parser(value)
-                        diffString += "\nThere is a new statement added in the where clause" + results
+                        diffString += "\nThere is a new statement added in the where clause " + results
 
                 if 'iterable_item_removed' in ddiff:
                     iterable_values = ddiff['iterable_item_removed']
                     for key, value in iterable_values.items():
                         results = self.token_parser(value)
-                        diffString += "\nThere is a statement removed in the where" + results
+                        diffString += "\nThere is a statement removed in the where " + results
 
                 where_clause1 = parsed_query1['where']
                 where_clause2 = parsed_query2['where']
@@ -386,14 +386,17 @@ class Comparison:
                     
                     converted_clause1 = self.convert_to_and_of_or_with_and_of(where_clause1)
                     converted_clause2 = self.convert_to_and_of_or_with_and_of(where_clause2)
-
+                    
                     added_item = ddiff['dictionary_item_added'][0] # get the first dictionary in the list
                     
                     key_parts = added_item.split('[')  # split the string at '[' characters
                     key_parts = [part.strip('"]') for part in key_parts]  # remove leading/trailing '"' characters
                     where_op = key_parts[-1]  # get the last element of the list, which should be the oper
 
-                    diffString += "\nAddition of " + where_op + " condition to query 2\nQuery 1: " + \
+                    if (converted_clause1)=='':
+                        diffString += "\nAddition of " + where_op + " condition to query 2 \n" + str(converted_clause2)
+                    else:
+                        diffString += "\nAddition of " + where_op + " condition to query 2 \nQuery 1: " + \
                                 str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
 
                 #Q1-> Q2 has a dictionary item removed
@@ -408,10 +411,16 @@ class Comparison:
 
                     converted_clause1 = self.convert_to_and_of_or_with_and_of(where_clause1)
                     converted_clause2 = self.convert_to_and_of_or_with_and_of(where_clause2)
+                    
+                    print(converted_clause1 - converted_clause2)
 
-                    diffString += "\nRemoved " + where_op + " condition to query 2\nQuery 1: " + \
-                                str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
-
+                    if converted_clause2 != '':
+                        diffString += "\nRemoved " + where_op + " condition from query 2\nQuery 1: " + \
+                                    str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
+                    else:
+                        diffString += "\nRemoved " + where_op + " condition from query 2\n " + \
+                                    str(converted_clause1)
+                     
         except Exception as e:
             print(e,"error5 *")
             diffString = self.find_token_changed(ddiff)
