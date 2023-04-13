@@ -154,7 +154,6 @@ class DBConnection:
 
     def execute(self, query: str):
         """Executes a query on the database and returns the results.
-        Args:
         """
         try:
             self.cur.execute(query)
