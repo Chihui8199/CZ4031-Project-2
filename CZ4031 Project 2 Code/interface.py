@@ -300,12 +300,10 @@ class Application(ttk.Window):
         self.user_entry.get(),
         self.password_entry.get()]
         try:
-            # print("hellosdf", self.configList)
             preprocessor = explain.Preprocessing(self.configList)
             messagebox.showinfo("Login", "You are now logged in!")
             self.login_window.protocol("WM_DELETE_WINDOW", None)
             self.login_window.destroy()
-            # print("db:",preprocessor)
         except Exception as e:
             print(e)
             messagebox.showinfo("Failed", "Login failed")
@@ -330,129 +328,140 @@ class Application(ttk.Window):
             
             self.why_change(self.initial_query,self.new_query)
             self.submit_button.config(state="normal")
-
+            
+    def initial_query_validation(self, initial_query, new_query, preprocessor):
+        validation1 = preprocessor.validate_query(initial_query)
+        validation2 = preprocessor.validate_query(new_query)
+        if validation1["error"] == True:
+            messagebox.showerror("showwarning", "Initial Query: " + validation1["error_message"])
+            return False
+        if validation2["error"] == True:
+            messagebox.showerror("showwarning", "New Query: " + validation2["error_message"])
+            return False
+        return True
 
     def why_change(self,initial,new):
-
         print("\nInitial_query:\n",initial)
         print("\nNew_query:\n",new)
         preprocessor = explain.Preprocessing(self.configList)
+        # initial query validation
+        isValid = self.initial_query_validation(initial, new, preprocessor)
+        # TODO: @shannen, please check if this is correct
         title_font = font.Font(family="Helvetica", size=18, weight="bold")
         body_font = font.Font(family="Helvetica", size=14)
-
-        comparing = explain.Comparison()
-        updated_clause = comparing.comparing(initial, new)
-        
-        
-        if updated_clause == None:
-            messagebox.showerror("showwarning", "SQL Queries are the same, please ensure they are different!")
-            self.analysis_text.config(state=DISABLED)
-
-        else:
-            added_analysis_text =  updated_clause + "\n\n"
-            self.analysis_text.config(state="normal")
-            self.analysis_text.delete('1.0', END)
-            self.analysis_text.insert(END, "Difference in SQL Queries: \n", ("title",))
-            self.analysis_text.insert(END, added_analysis_text, ("body",))
-
-            # Get Query plans from user input
-            try:
-                initialPlan = preprocessor.get_query_plan(self.initial_query)
-                newPlan = preprocessor.get_query_plan(self.new_query)
-            except Exception as e:
-                messagebox.showerror("showwarning", "Please input a working SQL Query!")
-                return
-
-            for widget in self.sql_output_container_initial.winfo_children():
-                widget.destroy()
-
-            self.initial_button = ttk.Button (self.sql_output_container_initial, text="Generate Table", command= lambda: self.tableTab(self.initial_query,self.sql_output_container_initial) , bootstyle="secondary")
-            self.initial_button.pack(pady=20,expand=True)           
-
-            for widget in self.sql_output_container_new.winfo_children():
-                widget.destroy()
-
-            self.new_button = ttk.Button (self.sql_output_container_new, text="Generate Table", command= lambda: self.tableTab(self.new_query,self.sql_output_container_new) , bootstyle="secondary")
-            self.new_button.pack(pady=20,expand=True)
-        
-            # Get table output
-            # self.tableTab(self.initial_query,self.sql_output_container_initial)
-            # self.tableTab(self.new_query,self.sql_output_container_new)
+        if isValid:
+            comparing = explain.Comparison()
+            updated_clause = comparing.comparing(initial, new)
             
-            try:
-                # Generate Graph as images
-                annotator = explain.Annotation(initialPlan)
-                annotator.generate_graph("img/initialPlan")
-                annotator = explain.Annotation(newPlan)
-                annotator.generate_graph("img/newPlan")
+            if updated_clause == None:
+                messagebox.showerror("showwarning", "SQL Queries are the same, please ensure they are different!")
+                self.analysis_text.config(state=DISABLED)
 
-                # insert images into Text Box
-                self.initial_query_plan_text.config(state="normal")
-                self.initial_query_plan_text.delete('1.0', END)
-                imgInitial = Image.open("img/initialPlan.png")
+            else:
+                added_analysis_text =  updated_clause + "\n\n"
+                self.analysis_text.config(state="normal")
+                self.analysis_text.delete('1.0', END)
+                self.analysis_text.insert(END, "Difference in SQL Queries: \n", ("title",))
+                self.analysis_text.insert(END, added_analysis_text, ("body",))
 
-                # Resize Image
-                w, h = imgInitial.size
-                ratio = min(self.initial_query_plan_text.winfo_width() / w, self.initial_query_plan_text.winfo_height() / h)
-                new_size = (int(w * ratio), int(h * ratio))
-                imgInitial = imgInitial.resize(new_size)
+                # Get Query plans from user input
+                try:
+                    initialPlan = preprocessor.get_query_plan(self.initial_query)
+                    newPlan = preprocessor.get_query_plan(self.new_query)
+                except Exception as e:
+                    messagebox.showerror("showwarning", "Please input a working SQL Query!")
+                    return
 
-                # Insert Image
-                self.initial_img = ImageTk.PhotoImage(imgInitial)
-                self.initial_query_plan_text.image_create(END, image=self.initial_img)
-                self.initial_query_plan_text.config(state=DISABLED)
+                for widget in self.sql_output_container_initial.winfo_children():
+                    widget.destroy()
 
-                self.new_query_plan_text.config(state="normal")
-                self.new_query_plan_text.delete('1.0', END)
-                imgNew = Image.open("img/newPlan.png")
+                self.initial_button = ttk.Button (self.sql_output_container_initial, text="Generate Table", command= lambda: self.tableTab(self.initial_query,self.sql_output_container_initial) , bootstyle="secondary")
+                self.initial_button.pack(pady=20,expand=True)           
 
-                # Resize Image
-                w, h = imgNew.size
-                ratio = min(self.new_query_plan_text.winfo_width() / w, self.new_query_plan_text.winfo_height() / h)
-                new_size = (int(w * ratio), int(h * ratio))
-                imgNew = imgNew.resize(new_size)
+                for widget in self.sql_output_container_new.winfo_children():
+                    widget.destroy()
 
-                # Insert Image
-                self.new_img = ImageTk.PhotoImage(imgNew)
-                self.new_query_plan_text.image_create(END, image=self.new_img)
-                self.new_query_plan_text.config(state=DISABLED)
-
+                self.new_button = ttk.Button (self.sql_output_container_new, text="Generate Table", command= lambda: self.tableTab(self.new_query,self.sql_output_container_new) , bootstyle="secondary")
+                self.new_button.pack(pady=20,expand=True)
+            
+                # Get table output
+                # self.tableTab(self.initial_query,self.sql_output_container_initial)
+                # self.tableTab(self.new_query,self.sql_output_container_new)
                 
+                try:
+                    # Generate Graph as images
+                    annotator = explain.Annotation(initialPlan)
+                    annotator.generate_graph("img/initialPlan")
+                    annotator = explain.Annotation(newPlan)
+                    annotator.generate_graph("img/newPlan")
 
-                # compare plans
-                if initialPlan == newPlan:
-                    print('\n\nExecution plans are the same') 
-                    self.comparePlan(initialPlan, newPlan, added_analysis_text)
-                    self.analysis_text.config(state="normal")
-                    # self.analysis_text.delete('1.0', END) 
-                    self.analysis_text.insert('1.0', "The SQL Queries have the same query plan!")
+                    # insert images into Text Box
+                    self.initial_query_plan_text.config(state="normal")
+                    self.initial_query_plan_text.delete('1.0', END)
+                    imgInitial = Image.open("img/initialPlan.png")
 
-                else:
+                    # Resize Image
+                    w, h = imgInitial.size
+                    ratio = min(self.initial_query_plan_text.winfo_width() / w, self.initial_query_plan_text.winfo_height() / h)
+                    new_size = (int(w * ratio), int(h * ratio))
+                    imgInitial = imgInitial.resize(new_size)
+
+                    # Insert Image
+                    self.initial_img = ImageTk.PhotoImage(imgInitial)
+                    self.initial_query_plan_text.image_create(END, image=self.initial_img)
+                    self.initial_query_plan_text.config(state=DISABLED)
+
+                    self.new_query_plan_text.config(state="normal")
+                    self.new_query_plan_text.delete('1.0', END)
+                    imgNew = Image.open("img/newPlan.png")
+
+                    # Resize Image
+                    w, h = imgNew.size
+                    ratio = min(self.new_query_plan_text.winfo_width() / w, self.new_query_plan_text.winfo_height() / h)
+                    new_size = (int(w * ratio), int(h * ratio))
+                    imgNew = imgNew.resize(new_size)
+
+                    # Insert Image
+                    self.new_img = ImageTk.PhotoImage(imgNew)
+                    self.new_query_plan_text.image_create(END, image=self.new_img)
+                    self.new_query_plan_text.config(state=DISABLED)
+
                     
-                    # Get all Initial Query Join and Relations relationships
-                    self.analysis_text.config(state="normal")
-                    self.analysis_text.insert(END, "In the Initial Query:\n", ("title",))
-                    initialJoinString = self.searchJoin(initialPlan)
 
-                    # Get all New Query Join and Relations relationships
-                    self.analysis_text.insert(END, "\nIn the New Query:\n", ("title",))
-                    newJoinString = self.searchJoin(newPlan)
-                    
-                    # if initialJoinString == newJoinString:
-                    #     self.analysis_text.delete('1.0', END)
-                    
-                # Get cost of both plans and compare them
-                costFunction = explain.CalculateCost()
-                costString = costFunction.printCost(initialPlan,newPlan)
-                self.analysis_text.insert(END, "\nTotal Cost Comparison:\n\n", ("title",))
-                self.analysis_text.insert(END, costString, ("body",))
-                self.analysis_text.tag_configure("title", font=title_font, underline=True)
-                self.analysis_text.tag_configure("body", font=body_font)
-                self.analysis_text.config(state=DISABLED) 
+                    # compare plans
+                    if initialPlan == newPlan:
+                        print('\n\nExecution plans are the same') 
+                        self.comparePlan(initialPlan, newPlan, added_analysis_text)
+                        self.analysis_text.config(state="normal")
+                        # self.analysis_text.delete('1.0', END) 
+                        self.analysis_text.insert('1.0', "The SQL Queries have the same query plan!")
 
-            except Exception as e:
-                traceback.print_exc()
-                messagebox.showerror("showwarning", "SQL Query is invalid, please try again!")
+                    else:
+                        
+                        # Get all Initial Query Join and Relations relationships
+                        self.analysis_text.config(state="normal")
+                        self.analysis_text.insert(END, "In the Initial Query:\n", ("title",))
+                        initialJoinString = self.searchJoin(initialPlan)
+
+                        # Get all New Query Join and Relations relationships
+                        self.analysis_text.insert(END, "\nIn the New Query:\n", ("title",))
+                        newJoinString = self.searchJoin(newPlan)
+                        
+                        # if initialJoinString == newJoinString:
+                        #     self.analysis_text.delete('1.0', END)
+                        
+                    # Get cost of both plans and compare them
+                    costFunction = explain.CalculateCost()
+                    costString = costFunction.printCost(initialPlan,newPlan)
+                    self.analysis_text.insert(END, "\nTotal Cost Comparison:\n\n", ("title",))
+                    self.analysis_text.insert(END, costString, ("body",))
+                    self.analysis_text.tag_configure("title", font=title_font, underline=True)
+                    self.analysis_text.tag_configure("body", font=body_font)
+                    self.analysis_text.config(state=DISABLED) 
+
+                except Exception as e:
+                    traceback.print_exc()
+                    messagebox.showerror("showwarning", "Both Queries are the same!")
                     
 
     # Search for all Joins, Relations and Scan type for a plan
