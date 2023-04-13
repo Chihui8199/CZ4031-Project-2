@@ -1,7 +1,0 @@
-digraph {
-	graph [bgcolor=white]
-	node [color=black fillcolor=lightblue style=filled]
-	-3792171433834968306 [label="Seq Scan (Cost: 5085.00)
-Relation Name: customer" shape=box]
-	node [shape=box]
-}
