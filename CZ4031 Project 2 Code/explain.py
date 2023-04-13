@@ -11,8 +11,8 @@ from pprint import pprint
 from deepdiff import DeepDiff
 
 class Annotation():
-    def __init__(self, qep_json):
-        self.qep = qep_json
+    def __init__(self, qep_plan):
+        self.qep = qep_plan
         #Pre-defining the graph and node's visualization attributes
         graph_attribute = {'bgcolor': 'white'}
         node_attribute = {'style': 'filled', 'color': 'black', 'fillcolor': 'lightblue'}
@@ -20,6 +20,14 @@ class Annotation():
         
     
     def build_dot(self, qep, parent=None, seq=1):
+        """
+        Recursive method to build the graph.
+        
+        Parameters:
+            qep (dict): A dictionary representing the query execution plan.
+            parent (str): ID of the parent node. Default is None.
+            seq (int): Sequence of the node within the parent. Default is 1.
+        """
         node_id = str(hash(str(qep)))
         label = f"{qep['Node Type']} (Cost: {qep['Total Cost']:.2f})"
         if 'Relation Name' in qep:
@@ -33,6 +41,15 @@ class Annotation():
                 self.build_dot(plan, node_id, i+1)
 
     def generate_graph(self, query_plan, format='png', view=True):
+        '''
+        Method to generate the graph.
+        
+        Parameters:
+            query_plan (str): File path to save the generated graph image.
+            format (str): Format of the generated graph image. Default is 'png'.
+            view (bool): Whether to display the generated graph image. Default is True.
+        
+        '''
         self.build_dot(self.qep)
         self.graph.attr('node', shape='box')  # set the shape of the nodes
         self.graph.render(query_plan, format=format, view=False)
@@ -40,12 +57,24 @@ class Annotation():
 
 class Preprocessing:
     def __init__(self,configList):
+        '''
+        Initializes a new instance of the `Preprocessing` class.
+        '''
         self.db = DBConnection(configList)
 
     def get_query_results(self, sql_query):
+        '''
+        Executes the given SQL query on the connected database and returns the resulting data and column names.
+
+        Parameters:
+        - sql_query: The SQL query to be executed on the connected database.
+
+        Returns:
+        - query_res: The resulting data of the executed SQL query.
+        - column_names: The column names of the resulting data.
+        '''
         output = self.validate_query(sql_query) 
         query_res, column_names = self.db.execute(sql_query)
-        # print(query_res)
         return query_res, column_names
     
     
@@ -64,26 +93,15 @@ class Preprocessing:
         Raises:
             ValueError: If the provided SQL query is invalid.
         """
-        # TODO: 
-        # CALL on front end raise value error 
-        print("ENTERING GET QUERY PLAN")
+        # TODO: Implement this method in front end for error validation
         is_query_valid = self.validate_query(sql_query) 
-        print("QUERY VALIDATION: ", is_query_valid)
         query_plan_res = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
-        # print(query_plan_res[0][0][0])
-        
-        #output = self.validate(sql_query) 
-        #query_plan_res,b = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
-        
         try:
-            print("_3242354346757",query_plan_res[0][0][0][0]['Plan'])
             query_plan_res = query_plan_res[0][0][0][0]['Plan']
-            
             
         except Exception as e:
             query_plan_res = {}
             pass
-        print(query_plan_res)
         return query_plan_res
 
     def validate_query(self, query):
@@ -102,8 +120,9 @@ class Preprocessing:
             result["error"] = True
             return result
         # if query exists check that the query is a valid query
-        if not self.db.is_query_valid(query):
-            result["error_message"] = "The query cannot be executed and is invalid"
+        isValid, error = self.db.is_query_valid(query)
+        if not isValid:
+            result["error_message"] = f"The query cannot be executed and is invalid. \n Error: {error}"
             result["error"] = True
             return result
             
@@ -125,14 +144,6 @@ class DBConnection:
             ValueError: If the config.json fi
         
         """
-       
-        # dir_path = os.path.dirname(os.path.realpath(__file__))
-        # db_config_path = os.path.join(dir_path, "config.json")
-
-        # with open(db_config_path, "r") as file:
-        #     config_dict = json.load(file)
-        # try:
-        print("AHHHHHHHHH",configList)
         self.host = configList[0]
         self.port = configList[1]
         self.database = configList[2]
@@ -140,20 +151,13 @@ class DBConnection:
         self.password = configList[4]
         self.conn = psycopg2.connect(host=self.host, port=self.port,database=self.database,user=self.user, password=self.password)
         self.cur = self.conn.cursor()
-        # except Exception as e:
-        #     print("err")
-        #     # print("hello", self.conn)
-        #     # print(self.cur)
-        #     print("Database Connection failed!")
 
     def execute(self, query: str):
         """Executes a query on the database and returns the results.
-        Args:
         """
         try:
             self.cur.execute(query)
             column_names = [description[0] for description in self.cur.description]
-            print(column_names)
             query_results = self.cur.fetchall()
             return query_results, column_names
         except Exception as e:
@@ -171,8 +175,8 @@ class DBConnection:
             self.cur.fetchone()
         except Exception as e:
             print ("Exception: is_query_valid:", e)
-            return False
-        return True
+            return False, e
+        return True, None
 
 class CalculateCost:
     def __init__(self):
@@ -206,15 +210,34 @@ class Comparison:
         print("Looking for difference------------")
     
     def comparing(self,sql_query1, sql_query2):
+        '''
+        Compares two SQL queries and returns a string describing their differences.
+
+        Args:
+            sql_query1 (str): The first SQL query to compare.
+            sql_query2 (str): The second SQL query to compare.
+
+        Returns:
+            str: A string describing the differences between the two queries.
+
+        '''
         parsed_query1 = parse(sql_query1)
         parsed_query2 = parse(sql_query2)
         ddiff = DeepDiff(parsed_query1, parsed_query2)
         difference = self.comparing_changes(ddiff, sql_query1,sql_query2,parsed_query1, parsed_query2)
-        print("\n\n\n\n",difference,"\n\n\n\n")
         return difference
     
     # single dict object of token
     def token_parser(self,dict_tokens):
+        '''
+        Parses a dictionary of tokens and returns a string representing the parsed result.
+
+        Args:
+            dict_tokens (dict): A dictionary of tokens to be parsed.
+
+        Returns:
+            str: A string representing the parsed result of the input tokens.
+        '''
         lhs = ''
         rhs = ''
         operator = ''
@@ -234,10 +257,26 @@ class Comparison:
         return results
 
     def cleaning_literal(self,value):
+        '''
+        Cleans a value tuple by extracting a right-hand side literal or the last item of a dotted notation.
+
+        Args:
+            value (tuple): A tuple representing a token value.
+
+        Returns:
+            tuple: A tuple containing the cleaned left-hand and right-hand side values.
+            
+        Example: 
+            ('c_custkey', {'literal': 18}) -> (c_custkey, 18)
+        '''
         right_value = value[1]['literal'] if 'literal' in value[1] else value[1].split('.')[-1]
         return value[0].split('.')[-1], right_value
 
     def convert_to_and_of_or_with_and_of(self,clause):
+        ''''
+        Converts the where clause of a sql's' ddiff into natural language
+        E.g. converts to (A AND B) OR C
+        '''
         and_clause = self.convert_and_clause(clause['and']) if 'and' in clause else ''
         or_clause = self.convert_or_clause(clause['or']) if 'or' in clause else ''
 
@@ -248,7 +287,13 @@ class Comparison:
         else:
             return and_clause
 
+    
     def convert_or_clause(self,or_clause):
+        ''''
+        Identify and convert OR conditions in the where clause of the sql's' ddiff into natural language
+        E.g. A OR B 
+        
+        '''
         or_parts = []
         for or_cond in or_clause:
             if 'and' in or_cond:
@@ -261,12 +306,22 @@ class Comparison:
         return " OR ".join(or_parts)
 
     def convert_and_clause(self,and_clause):
+        ''''
+        Identify and convert OR conditions in the where clause of the sql's' ddiff into natural language
+        E.g. A AND B 
+        
+        '''
         and_parts = []
         for and_cond in and_clause:
             and_parts.append(self.convert_and_condition(and_cond))
         return " AND ".join(and_parts)
 
     def convert_and_condition(self,and_cond):
+        ''''
+        Identify and convert AND conditions in the where clause of the sql's' ddiff into natural language
+        E.g. A='Apple', B>'Orange' 
+        
+        '''
         conditions = []
         for operator, operands in and_cond.items():
             left, right = map(lambda x: x.split('.')[-1] if isinstance(x, str) else x['literal'], operands)
@@ -286,6 +341,15 @@ class Comparison:
         return ' AND '.join(conditions)
     
     def find_token_changed(self, ddiff_obj):
+        '''
+        Extracts and returns the tokens that have changed from the DeepDiff object.
+
+        Args:
+            ddiff_obj (object): A DeepDiff object that contains the difference between two parsed SQL queries.
+
+        Returns:
+            str: A string that lists the clauses that have changed.
+        '''
         results = set()
         string_ddiff  = str(ddiff_obj).lower()
         if "from" in string_ddiff:
@@ -310,12 +374,28 @@ class Comparison:
 
 
     def comparing_changes(self,ddiff, sql_query1, sql_query2,parsed_query1,parsed_query2):
+        """
+        Compare two SQL queries and generate a string describing the differences between them.
+
+        Parameters:
+        - ddiff: A dictionary containing the differences between the two parsed SQL queries.
+        - sql_query1: The first SQL query, in string format.
+        - sql_query2: The second SQL query, in string format.
+        - parsed_query1: The first SQL query, parsed into a dictionary format.
+        - parsed_query2: The second SQL query, parsed into a dictionary format.
+
+        Returns:
+        - diffString: A string describing the differences between the two SQL queries. 
+        The string will include information on any changes made to the SELECT, FROM, GROUP BY, or LIMIT clauses, as well as any changes made to the WHERE clause,
+        such as changes in values, new or removed conditions, addition or removal of clauses, etc.
+        If no changes were made, the string will indicate this.
+        """
         diffString=''
         try:
             #If no changes
             token_changed_string = self.find_token_changed(ddiff)
             if ddiff  == {}:
-                print("No changes were made in Query 2")
+                diffString += "No changes"
             elif(any(s in token_changed_string for s in ['select', 'from', 'group by', 'limit'])):
                 diffString += token_changed_string
             else:
@@ -359,19 +439,16 @@ class Comparison:
                                     if f"'{old_value}'" in cond and f"'{new_value}'" not in cond:
                                         column = cond.split()[0]
                                         diffString += "\nThe " + column + " changed from " + old_value + " to " + new_value + "in the where condition"
-                        # elif key.startswith("root[") :
                         else:
                             print(f"Unexpected key format: {key}")
 
                 if 'iterable_item_added' in ddiff:
-                    print("ENTERING ITERABLE ADDED")
                     iterable_values = ddiff['iterable_item_added']
                     for key, value in iterable_values.items():
                         results = self.token_parser(value)
                         diffString += "\nThere is a new statement added in the where clause " + results
 
                 if 'iterable_item_removed' in ddiff:
-                    print("ADDING ITERABLE REMOVED")
                     iterable_values = ddiff['iterable_item_removed']
                     for key, value in iterable_values.items():
                         results = self.token_parser(value)
@@ -385,7 +462,6 @@ class Comparison:
 
                 #Q1-> Q2 has an addition of dictionary item
                 if ('dictionary_item_added' in ddiff and AddToOne == True):
-                    print("ENTERING DICT ITEM ADDED")
                     where_clause1 = parsed_query1['where']
                     where_clause2 = parsed_query2['where']
                     
@@ -406,7 +482,6 @@ class Comparison:
 
                 #Q1-> Q2 has a dictionary item removed
                 elif  ('dictionary_item_removed' in ddiff and AddToOne==False):
-                    print("ENTERING DICT ITEM REMOVED")
                     where_clause1 = parsed_query1['where']
                     where_clause2 = parsed_query2['where']
                     removed_item = ddiff['dictionary_item_removed'][0] # get the first dictionary in the list
@@ -426,7 +501,6 @@ class Comparison:
                                     str(converted_clause1)
                      
         except Exception as e:
-            print(e,"error5 *")
             diffString = self.find_token_changed(ddiff)
 
         return diffString 
