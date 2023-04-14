@@ -505,4 +505,78 @@ class Comparison:
 
         return diffString 
 
+
+class SearchNode:
+    
+    def __init__(self):
+        print("Searching for joins------------")
+
+    # Search for all Joins, Relations and Scan type for a plan
+    def searchJoin(self,plan):
+
+        joinList, relationList, scanList = [],[], []
+        joinOrder = 0
+
+        # find relations to join type and put into a list as a tuple
+        def findRelations(plan,joinOrder,joinList, relationList):
+
+            for i in range(len(plan)):
+                initialKey = list(plan.keys())[i]
+                initialValue = plan[initialKey]
+
+                # append all Node Type that contains Join/NestedLoop with joinOrder
+                if initialKey == 'Node Type':
+                
+                    if "Join" in initialValue or "Nested Loop" in initialValue:
+                        joinOrder += 1
+                        joinList.append((joinOrder, initialValue))
+
+                # append all Relation Name with joinorder and get Scan type of relations
+                if initialKey == 'Relation Name':
+                    relationList.append((joinOrder,initialValue))
+                    scanList.append((initialValue, plan['Node Type']))
+                    
+                # recursively iterate through all Plans
+                if initialKey == 'Plans':
+                    for j in initialValue:
+                        findRelations(j,joinOrder,joinList,relationList)
+            
+            return joinList, relationList
         
+        joinList,relationList = findRelations(plan,joinOrder, joinList, relationList)
+
+        # Make dictionary of Relations to Scan
+        scan_dict = {}
+        for relations,scan in scanList:
+            scan_dict[relations] = scan
+    
+        join_dict = {}
+        joincount=0
+        # Make a join dictionary that connects Join to Relations based on joinOrder
+        for join in joinList:
+            tempList = []
+            joincount+=1
+            for relations in relationList:
+                if join[0] <= relations[0]:
+                    tempList.append(relations[1])
+            join_dict[join[1]+str(joincount)] = tempList
+
+        
+        # Remove duplicate relations in join_dict
+        for join in join_dict:
+
+            for join2 in join_dict:
+                if join == join2: 
+                    continue
+
+                if all(elem in join_dict[join2] for elem in join_dict[join]):
+                    elemstring = ""
+                    for elem in join_dict[join]:
+                        join_dict[join2].remove(elem)
+                        elemstring = elemstring + elem + ", "
+                    elemstring = "[" + elemstring[:-2] + "]"
+                    join_dict[join2].append(elemstring)
+
+        return join_dict,scan_dict
+    
+    
