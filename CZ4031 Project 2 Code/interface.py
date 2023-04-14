@@ -162,8 +162,17 @@ class Application(ttk.Window):
                 AND '1994-01-31'
                 AND customer.c_mktsegment = 'AUTOMOBILE'
             ORDER BY orders.o_orderkey, customer.c_custkey;""",
-
-            "Query 18:"
+            
+            "Query 18": """SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) AS revenue, o_orderdate, o_shippriority
+            FROM customer, orders, lineitem
+            WHERE c_mktsegment = 'HOUSEHOLD'
+                AND c_custkey = o_custkey 
+                AND l_orderkey = o_orderkey AND o_orderdate < '1995-03-15' 
+                AND l_shipdate > '1995-03-15' 
+            GROUP BY l_orderkey, o_orderdate, o_shippriority
+            HAVING SUM(l_extendedprice*(1-l_discount)) > 10000
+            ORDER BY o_orderdate
+            LIMIT 10;""",
 
             "Query 3": """SELECT   l_orderkey,   SUM(l_extendedprice*(1-l_discount)) AS revenue,   o_orderdate,   o_shippriority
             FROM   customer,   orders,   lineitem
