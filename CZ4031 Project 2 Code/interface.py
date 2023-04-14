@@ -204,7 +204,7 @@ class Application(ttk.Window):
         self.configure(bg='#2C3143')
 
         # Set application icon
-        self.favicon_ico_path = 'img/cool.ico'
+        self.favicon_ico_path = 'img/logo.ico'
         self.icon_photo = ImageTk.PhotoImage(
             Image.open(self.favicon_ico_path))
         self.iconphoto(False, self.icon_photo)
