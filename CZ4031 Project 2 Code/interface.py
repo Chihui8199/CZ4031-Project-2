@@ -2,38 +2,31 @@ import tkinter as tk
 from tkinter import *
 from tkinter import font
 from tkinter import messagebox
-from tkinter.scrolledtext import ScrolledText
-import string
-from tkinter.tix import IMAGETEXT
 import ttkbootstrap as ttk
 from explain import *
 import explain 
-from PIL import ImageTk, Image, ImageFilter
+from PIL import ImageTk, Image
 from ttkbootstrap.tableview import Tableview
 import traceback
 
-# FONTS
-FONT = "Helvetica"
-FONT_PALATINO = "Palatino"
-BOLD = "BOLD"
-UNDERLINE = "UNDERLINE"
-FONT_NORMAL = (F"{FONT}", 18)
-FONT_BOLD = (f"{FONT} {BOLD}", 20)
-FONT_TITLE = (f"{FONT_PALATINO} {BOLD}", 40)
-FONT_UNDERLINE = (f"{FONT} {UNDERLINE}", 18)
+# Fonts
+FONT_TITLE = ("Palatino BOLD", 40)
+FONT_NORMAL = ("Helvetica", 18)
+FONT_BOLD = ("Helvetica BOLD", 20)
+FONT_UNDERLINE = ("Helvetica UNDERLINE", 18)
        
-
 
 class Application(ttk.Window):
     def __init__(self, master=None):
         super().__init__(self)
 
-        self.title("CZ4031 QEP Analyzer")
+        # Set the title and dimensions of the window
+        self.title("CZ4031 Project 2")
         self.geometry("1920x1080")
         self.generate_UI()
         self.configure(bg='#2C3143')
         
-        # set application icon
+        # Set application icon
         self.favicon_ico_path = 'img/cool.ico'
         self.icon_photo = ImageTk.PhotoImage(
         Image.open(self.favicon_ico_path))
@@ -57,7 +50,6 @@ class Application(ttk.Window):
         panedwindow=PanedWindow(self, orient=HORIZONTAL, bd=4, bg="#1C1C1E")  
         panedwindow.pack(fill=BOTH, expand=True)  
         
-
         # Frame for left
         self.window_container_left = ttk.Frame(panedwindow,width=250,height=400)
         self.window_container_left.pack(fill=tk.BOTH, side= LEFT)
@@ -73,51 +65,43 @@ class Application(ttk.Window):
         # Left window -----------------------------------------------------------------------------------
 
         queries_text = {
-            "Query 1": "select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey",
-            "Query 2": "select * from customer C, orders O where C.c_custkey = O.o_custkey",
-            "Query 3": """SELECT 
-  l_orderkey, 
-  SUM(l_extendedprice*(1-l_discount)) AS revenue, 
-  o_orderdate, 
-  o_shippriority
-FROM 
-  customer, 
-  orders, 
-  lineitem
-WHERE 
-  c_mktsegment = 'HOUSEHOLD'
-  AND c_custkey = o_custkey 
-  AND l_orderkey = o_orderkey 
-  AND o_orderdate < '1995-03-15' 
-  AND l_shipdate > '1995-03-15' 
-GROUP BY 
-  l_orderkey, 
-  o_orderdate, 
-  o_shippriority
-HAVING 
-  SUM(l_extendedprice*(1-l_discount)) > 10000
-ORDER BY 
-  revenue DESC, 
-  o_orderdate
-LIMIT 
-  10;""",
+            "Query 1": "SELECT * FROM customer C, orders O WHERE C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey",
+            "Query 2": "SELECT * FROM customer C, orders O WHERE C.c_custkey = O.o_custkey",
+            "Query 3": "SELECT * FROM customer C, orders O WHERE C.c_mktsegment like 'AUTOMOBILE' AND C.c_custkey = O.o_custkey",
+            "Query 3": """SELECT   l_orderkey,   SUM(l_extendedprice*(1-l_discount)) AS revenue,   o_orderdate,   o_shippriority
+            FROM   customer,   orders,   lineitem
+            WHERE   c_mktsegment = 'HOUSEHOLD'  AND c_custkey = o_custkey   AND l_orderkey = o_orderkey   AND o_orderdate < '1995-03-15'   AND l_shipdate > '1995-03-15' 
+            GROUP BY   l_orderkey,   o_orderdate,   o_shippriorityHAVING   SUM(l_extendedprice*(1-l_discount)) > 10000
+            ORDER BY   revenue DESC,   o_orderdateLIMIT   10;""",
 
-            "default": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' and c_mktsegment = 'BUILDING' GROUP by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate LIMIT 20",
-            "W/O orderby": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' and c_mktsegment = 'BUILDING' GROUP by l_orderkey, o_orderdate, o_shippriority order by o_orderdate LIMIT 20",
-            "W/O where": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' GROUP by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate LIMIT 20",
+            "Query 4": """SELECT l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue 
+            FROM customer, orders, lineitem 
+            WHERE customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' and c_mktsegment = 'BUILDING' 
+            GROUP BY l_orderkey, o_orderdate, o_shippriority 
+            ORDER BY revenue desc, o_orderdate LIMIT 20""",
+
+            "Query 5": """SELECT l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue 
+            FROM customer, orders, lineitem 
+            WHERE customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' and c_mktsegment = 'BUILDING' 
+            GROUP BY l_orderkey, o_orderdate, o_shippriority 
+            ORDER BY o_orderdate LIMIT 20""",
+
+            "Query 6": """SELECT l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue 
+            FROM customer, orders, lineitem 
+            WHERE customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' 
+            GROUP BY l_orderkey, o_orderdate, o_shippriority 
+            ORDER BY revenue desc, o_orderdate LIMIT 20""",
+      
+            "Query 7": """SELECT o.o_orderkey, c.c_custkey, l.l_partkey, SUM(l.l_quantity) AS total_quantity, SUM(l.l_extendedprice) AS total_price
+            FROM orders oJOIN customer c ON o.o_custkey = c.c_custkeyJOIN lineitem l ON o.o_orderkey = l.l_orderkey
+            WHERE o.o_orderdate BETWEEN '1994-01-01' AND '1994-01-31'AND l.l_discount BETWEEN 0.05 AND 0.10AND c.c_mktsegment = 'AUTOMOBILE'
+            GROUP BY o.o_orderkey, c.c_custkey, l.l_partkeyHAVING SUM(l.l_quantity) > 10
+            ORDER BY c.c_mktsegment, total_quantity DESC;""",
+
             "Invalid 1": "DELETE FROM table6 WHERE col1='value';",
-            "Invalid 2": "SELECT * FROM table7 WHERE col1 IN (SELECT col1 FROM table8 WHERE col2='value');",
-        "Query 4": """SELECT o.o_orderkey, c.c_custkey, l.l_partkey, SUM(l.l_quantity) AS total_quantity, SUM(l.l_extendedprice) AS total_price
-FROM orders o
-JOIN customer c ON o.o_custkey = c.c_custkey
-JOIN lineitem l ON o.o_orderkey = l.l_orderkey
-WHERE o.o_orderdate BETWEEN '1994-01-01' AND '1994-01-31'
-AND l.l_discount BETWEEN 0.05 AND 0.10
-AND c.c_mktsegment = 'AUTOMOBILE'
-GROUP BY o.o_orderkey, c.c_custkey, l.l_partkey
-HAVING SUM(l.l_quantity) > 10
-ORDER BY c.c_mktsegment, total_quantity DESC;
-""",}
+            "Invalid 2": "SELECT * FROM table7 WHERE col1 IN (SELECT col1 FROM table8 WHERE col2='value');", 
+            }
+            
         queries_selection = list(queries_text.keys())
 
         # Initial Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,7 +120,7 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         self.text_container1 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.text_container1.pack()
 
-        self.query_1 = Text(self.text_container1, width=70, height=10, wrap="word")
+        self.query_1 = Text(self.text_container1, width=70, height=12, wrap="word")
         self.query_1.pack(pady=10, padx=10)
 
         def update_query1(*args):
@@ -163,7 +147,7 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         self.text_container2 = ttk.Frame(self.window_container_left,borderwidth=0)
         self.text_container2.pack()
 
-        self.query_2 = Text(self.text_container2, width=70, height=10, wrap="word")
+        self.query_2 = Text(self.text_container2, width=70, height=12, wrap="word")
         self.query_2.pack(pady=10, padx=10)
 
         def update_query2(*args):
@@ -339,7 +323,6 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         preprocessor = explain.Preprocessing(self.configList)
         # initial query validation
         isValid = self.initial_query_validation(initial, new, preprocessor)
-        # TODO: @shannen, please check if this is correct
         title_font = font.Font(family="Helvetica", size=18, weight="bold")
         body_font = font.Font(family="Helvetica", size=14)
         if isValid:
@@ -354,7 +337,7 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
                 added_analysis_text =  updated_clause + "\n\n"
                 self.analysis_text.config(state="normal")
                 self.analysis_text.delete('1.0', END)
-                self.analysis_text.insert(END, "Difference in SQL Queries: \n", ("title",))
+                self.analysis_text.insert(END, "Difference in SQL Queries: \n\n", ("title",))
                 self.analysis_text.insert(END, added_analysis_text, ("body",))
 
                 # Get Query plans from user input
@@ -376,11 +359,6 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
 
                 self.new_button = ttk.Button (self.sql_output_container_new, text="Generate Table", command= lambda: self.tableTab(self.new_query,self.sql_output_container_new) , bootstyle="secondary")
                 self.new_button.pack(pady=20,expand=True)
-            
-                # Get table output
-                # self.tableTab(self.initial_query,self.sql_output_container_initial)
-                # self.tableTab(self.new_query,self.sql_output_container_new)
-                
                 try:
                     # Generate Graph as images
                     annotator = explain.Annotation(initialPlan)
@@ -423,9 +401,8 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
 
                     # compare plans
                     if initialPlan == newPlan:
-                        self.comparePlan(initialPlan, newPlan, added_analysis_text)
+                        
                         self.analysis_text.config(state="normal")
-                        # self.analysis_text.delete('1.0', END) 
                         self.analysis_text.insert('1.0', "The SQL Queries have the same query plan!")
 
                     else:
@@ -433,14 +410,19 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
                         # Get all Initial Query Join and Relations relationships
                         self.analysis_text.config(state="normal")
                         self.analysis_text.insert(END, "In the Initial Query:\n", ("title",))
-                        initialJoinString = self.searchJoin(initialPlan)
+                        joinResults, scanResults = self.searchJoin(initialPlan)
+                        initialJoinString = self.printJoin(joinResults, scanResults, self.analysis_text)
 
                         # Get all New Query Join and Relations relationships
                         self.analysis_text.insert(END, "\nIn the New Query:\n", ("title",))
-                        newJoinString = self.searchJoin(newPlan)
+                        joinResults, scanResults = self.searchJoin(newPlan)
+                        newJoinString = self.printJoin(joinResults, scanResults, self.analysis_text)
                         
-                        # if initialJoinString == newJoinString:
-                        #     self.analysis_text.delete('1.0', END)
+                        if initialJoinString == newJoinString:
+                            self.analysis_text.delete('1.0', END)
+                            self.analysis_text.insert(END, "Difference in SQL Queries: \n\n", ("title",))
+                            self.analysis_text.insert(END, added_analysis_text, ("body",))
+
                         
                     # Get cost of both plans and compare them
                     costFunction = explain.CalculateCost()
@@ -452,7 +434,6 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
                     self.analysis_text.config(state=DISABLED) 
 
                 except Exception as e:
-                    traceback.print_exc()
                     messagebox.showerror("showwarning", "Both Queries are the same!")
                     
 
@@ -521,34 +502,36 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
                         elemstring = elemstring + elem + ", "
                     elemstring = "[" + elemstring[:-2] + "]"
                     join_dict[join2].append(elemstring)
+
+        return join_dict,scan_dict
                         
-                    
+
+    def printJoin(self,join_dict,scan_dict,container):
         listToReturn = []
         body_font = font.Font(family="Helvetica", size=12)
-        self.analysis_text.config(state="normal")
+        container.config(state="normal")
 
         # Print out join relations
         for join in join_dict:
             try:
                 joinString = f"\n{join[:-1]} was used between '{join_dict[join][0]}'({scan_dict[join_dict[join][0]]}) and '{join_dict[join][1]}'({scan_dict[join_dict[join][1]]})\n"
                 listToReturn.append(joinString)
-                self.analysis_text.insert(END, joinString, ("body",) )
+                container.insert(END, joinString, ("body",) )
             except Exception as e:
                 try:
                     joinString = f"\n{join[:-1]} was used between '{join_dict[join][0]}'({scan_dict[join_dict[join][0]]}) and '{join_dict[join][1]}'\n"
                     listToReturn.append(joinString)
-                    self.analysis_text.insert(END, joinString, ("body",))
+                    container.insert(END, joinString, ("body",))
 
                 except Exception as e:
                     joinString = f"\n{join[:-1]} was used between '{join_dict[join][0]}' and '{join_dict[join][1]}'\n"
                     listToReturn.append(joinString)
-                    self.analysis_text.insert(END, joinString, ("body",))
+                    container.insert(END, joinString, ("body",))
 
         self.analysis_text.tag_configure("body", font=body_font) 
         return listToReturn
               
     def createTableOutput(self, output, columns, container):
-
         # Prepare column data
         columnData = []
         for header in columns:
@@ -566,13 +549,14 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
             coldata=columnData,
             rowdata=rowData,
             autoalign= True,
-            autofit = True,
             paginated=True,
-            pagesize=50,
+            autofit = True,
+            pagesize=40,
             searchable=True,
             stripecolor=(None, None)
         )
-        dataTable.pack(padx=10, pady=10, fill=BOTH, expand=TRUE)
+
+        dataTable.pack(padx=10, pady=10, expand=True, fill=BOTH)
 
     def tableTab(self,query, container):
 
