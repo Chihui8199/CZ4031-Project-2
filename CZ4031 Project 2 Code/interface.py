@@ -12,17 +12,15 @@ from PIL import ImageTk, Image, ImageFilter
 from ttkbootstrap.tableview import Tableview
 import traceback
 
-# FONT SETTINGS
+# FONTS
 FONT = "Helvetica"
-FONT_MONSTERRAT = "Palatino"
+FONT_PALATINO = "Palatino"
 BOLD = "BOLD"
-ITALIC = "ITALIC"
 UNDERLINE = "UNDERLINE"
-FONT_NORMAL = (FONT, 18)
+FONT_NORMAL = (F"{FONT}", 18)
 FONT_BOLD = (f"{FONT} {BOLD}", 20)
-FONT_TITLE = (f"{FONT_MONSTERRAT} {BOLD}", 40)
+FONT_TITLE = (f"{FONT_PALATINO} {BOLD}", 40)
 FONT_UNDERLINE = (f"{FONT} {UNDERLINE}", 18)
-FONT_CREDITS = (f"{FONT} {ITALIC}", 10)
        
 
 
@@ -36,11 +34,10 @@ class Application(ttk.Window):
         self.configure(bg='#2C3143')
         
         # set application icon
-        # TODO: uncomment this to set application icon (currently not working)
-        # self.favicon_ico_path = 'img/cool.ico'
-        # self.icon_photo = ImageTk.PhotoImage(
-        # Image.open(self.favicon_ico_path))
-        # self.iconphoto(False, self.icon_photo)
+        self.favicon_ico_path = 'img/cool.ico'
+        self.icon_photo = ImageTk.PhotoImage(
+        Image.open(self.favicon_ico_path))
+        self.iconphoto(False, self.icon_photo)
 
     
     def generate_UI(self):
@@ -55,7 +52,6 @@ class Application(ttk.Window):
         s.configure("Line.TSeparator", background="black")
         separator = ttk.Separator(self.window_container, orient='horizontal', style="Line.TSeparator")
         separator.pack(fill='x')
-        
         
         #Create Panedwindow  
         panedwindow=PanedWindow(self, orient=HORIZONTAL, bd=4, bg="#1C1C1E")  
@@ -150,7 +146,6 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
             self.query_1.insert(tk.END, selected_text)
 
         value1.trace('w', update_query1)
-        self.query_1.insert('1.0',"select * from customer C, orders O where C.c_custkey = O.o_custkey")
 
         # New Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -161,7 +156,6 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         my_label.configure(background='#2C3143', foreground='white')
         my_label.pack(padx=10,pady=10,anchor = NW, side=LEFT)
         
-        # queries_selection = list(queries_text.keys())
         value2 = tk.StringVar()
         self.example_query = ttk.OptionMenu(self.sql_container2, value2, queries_selection[0], *queries_selection)
         self.example_query.pack(padx=10,pady=10,anchor = NE, side = RIGHT)
@@ -179,21 +173,15 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
             self.query_2.insert(tk.END, selected_text)
 
         value2.trace('w', update_query2)
-        self.query_2.insert('1.0',"select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey")
 
         self.submit_button = ttk.Button (self.text_container2, text="Submit", command=self.submit_queries , bootstyle="secondary")
         self.submit_button.pack(pady=20)
 
-        
-        
         # Right window -----------------------------------------------------------------------------------
 
         s.configure("Custom.TNotebook", tabposition="n", background="#2C3143", bordercolor="#2C3143")
         s.configure("Custom.TNotebook.Tab",background="#6C788B",foreground='white')
         s.map("Custom.TNotebook.Tab", background=[("selected", "#2C3143")], foreground=[("selected", "white")])
-
-        # s.configure("Custom.TNotebook.Tab",background="#6C788B",foreground='white', font=("Helvetica", 20))
-        # s.map("Custom.TNotebook.Tab", background=[("selected", "#2C3143")], foreground=[("selected", "white")], font=[("selected", ("Helvetica", 20))])
 
         # create the notebook with the custom style
         self.tabs_holders = ttk.Notebook(self.window_container_right, style="Custom.TNotebook" )
@@ -234,7 +222,7 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         self.analysis_label.configure(background='#2C3143', foreground='white')
         self.analysis_label.pack(pady=20)
         self.analysis_text = Text(self.analysis_container, width=70, height=50, wrap="word")
-        self.analysis_text.pack(pady=10, padx=10)
+        self.analysis_text.pack(pady=10, padx=10, expand = True, fill = BOTH)
 
         self.sql_output_container_initial = ttk.Frame(self.tabs_holders,borderwidth=0)
         self.sql_output_container_initial.pack(fill=tk.BOTH)
@@ -244,7 +232,8 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         self.sql_output_container_new.pack(fill=tk.BOTH)
         self.tabs_holders.add(self.sql_output_container_new, text="Output (New Query)")
 
-        
+        # Login ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         self.login_window = Toplevel(self.window_container)
         self.login_window.title("Login")
         width = 300
@@ -254,21 +243,6 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         x_coordinate = (screen_width / 2) - (width / 2)
         y_coordinate = (screen_height / 2) - (height / 2)
         self.login_window.geometry("%dx%d+%d+%d" % (width, height, x_coordinate, y_coordinate))
-
-        # Create a background image
-        # background_image = Image.open("img/background.png")
-        # background_photo = ImageTk.PhotoImage(background_image)
-        # background_canvas = Canvas(self.window_container, width=self.window_container.winfo_width(), height=self.window_container.winfo_height())
-        # background_canvas.pack()
-        # background_canvas.create_image(0, 0, image=background_photo, anchor=NW)
-
-        
-        # # Apply a blur effect to the parent window
-        # self.blur_effect = Image.open("img/background.png").filter(ImageFilter.GaussianBlur(10))
-        # self.blur_photo = ImageTk.PhotoImage(self.blur_effect)
-        # self.parent_canvas = Canvas(self.window_container, width=self.window_container.winfo_width(), height=self.window_container.winfo_height())
-        # self.parent_canvas.pack()
-        # self.parent_canvas.create_image(0, 0, image=self.blur_photo, anchor=NW)
         
         # Create the login form
         self.host_label = ttk.Label(self.login_window, text="Host:")
@@ -311,19 +285,8 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         
         self.login_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5)
 
-        
-        # print(self.configList)
         # Focus the username entry widget
         self.host_entry.focus_set()
-        
-        # self.blur_effect = Image.open("img/background_image.jpg").filter(ImageFilter.GaussianBlur(10))
-        # self.blur_photo = ImageTk.PhotoImage(self.blur_effect)
-        # self.blur_effect.save("blurred_image.jpg")
-        
-        # self.parent_canvas = Canvas(self.window_container, width=self.window_container.winfo_width(), height=self.window_container.winfo_height())
-        # self.parent_canvas.pack(fill=BOTH, expand=True)
-        # self.parent_canvas.create_image(0, 0, image=self.blur_photo, anchor=NW)
-
 
         # Bind the <Return> key to the login method
         self.login_window.bind("<Return>", self.login)
@@ -342,14 +305,8 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
             self.login_window.protocol("WM_DELETE_WINDOW", None)
             self.login_window.destroy()
         except Exception as e:
-            print(e)
             messagebox.showinfo("Failed", "Login failed")
         
-            # self.login_window.destroy()
-            
-        # self.parent_canvas.destroy()
-        
-
     def submit_queries(self):
             # Disable button to prevent spamming
             self.submit_button.configure(state=DISABLED)
@@ -378,11 +335,11 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
         return True
 
     def why_change(self,initial,new):
-        print("\nInitial_query:\n",initial)
-        print("\nNew_query:\n",new)
+
         preprocessor = explain.Preprocessing(self.configList)
         # initial query validation
         isValid = self.initial_query_validation(initial, new, preprocessor)
+        # TODO: @shannen, please check if this is correct
         title_font = font.Font(family="Helvetica", size=18, weight="bold")
         body_font = font.Font(family="Helvetica", size=14)
         if isValid:
@@ -466,7 +423,6 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
 
                     # compare plans
                     if initialPlan == newPlan:
-                        print('\n\nExecution plans are the same') 
                         self.comparePlan(initialPlan, newPlan, added_analysis_text)
                         self.analysis_text.config(state="normal")
                         # self.analysis_text.delete('1.0', END) 
@@ -609,18 +565,17 @@ ORDER BY c.c_mktsegment, total_quantity DESC;
             master=container,
             coldata=columnData,
             rowdata=rowData,
+            autoalign= True,
+            autofit = True,
             paginated=True,
             pagesize=50,
             searchable=True,
-            stripecolor=(None, None),
-            autoalign= True,
-            autofit = True
+            stripecolor=(None, None)
         )
         dataTable.pack(padx=10, pady=10, fill=BOTH, expand=TRUE)
 
     def tableTab(self,query, container):
 
-        print("\n\n\n\nIM IN TABLE TABBBBBB*********************************************\n\n\n\n")
         for child in container.winfo_children():
             child.destroy() # Clean up sql output
         preprocessor = explain.Preprocessing(self.configList)
