@@ -1,0 +1,8 @@
+{
+    "docify.commentService.programmingLanguage": "python",
+    "docify.commentService.docstringFormat": "Google",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "python.formatting.provider": "none"
+}

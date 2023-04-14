@@ -1,17 +1,20 @@
-"""
+'''
 Contains code for preprocessing user inputs and data used in algorithm
-"""
+'''
 
-import json
 import psycopg2
-import os
 from graphviz import Digraph
 from mo_sql_parsing import parse
-from pprint import pprint
 from deepdiff import DeepDiff
 
 class Annotation():
     def __init__(self, qep_plan):
+        '''
+         Initialize the QEP visualization. This is the place to do it. You have to call __init__ in order to get the graph and node's visualization attributes
+         
+         Args:
+         	 qep_plan: The QEP plan to
+        '''
         self.qep = qep_plan
         #Pre-defining the graph and node's visualization attributes
         graph_attribute = {'bgcolor': 'white'}
@@ -20,14 +23,14 @@ class Annotation():
         
     
     def build_dot(self, qep, parent=None, seq=1):
-        """
+        '''
         Recursive method to build the graph.
         
-        Parameters:
+        Args:
             qep (dict): A dictionary representing the query execution plan.
             parent (str): ID of the parent node. Default is None.
             seq (int): Sequence of the node within the parent. Default is 1.
-        """
+        '''
         node_id = str(hash(str(qep)))
         label = f"{qep['Node Type']} (Cost: {qep['Total Cost']:.2f})"
         if 'Relation Name' in qep:
@@ -44,7 +47,7 @@ class Annotation():
         '''
         Method to generate the graph.
         
-        Parameters:
+        Args:
             query_plan (str): File path to save the generated graph image.
             format (str): Format of the generated graph image. Default is 'png'.
             view (bool): Whether to display the generated graph image. Default is True.
@@ -66,12 +69,12 @@ class Preprocessing:
         '''
         Executes the given SQL query on the connected database and returns the resulting data and column names.
 
-        Parameters:
-        - sql_query: The SQL query to be executed on the connected database.
+        Args:
+            sql_query: The SQL query to be executed on the connected database.
 
         Returns:
-        - query_res: The resulting data of the executed SQL query.
-        - column_names: The column names of the resulting data.
+        	query_res: The resulting data of the executed SQL query.
+        	column_names: The column names of the resulting data.
         '''
         output = self.validate_query(sql_query) 
         query_res, column_names = self.db.execute(sql_query)
@@ -79,7 +82,7 @@ class Preprocessing:
     
     
     def get_query_plan(self, sql_query):
-        """
+        '''
         Generates a Query Execution Plan (QEP) for a given SQL query.
 
         Args:
@@ -92,8 +95,7 @@ class Preprocessing:
 
         Raises:
             ValueError: If the provided SQL query is invalid.
-        """
-        # TODO: Implement this method in front end for error validation
+        '''
         is_query_valid = self.validate_query(sql_query) 
         query_plan_res = self.db.execute("EXPLAIN (FORMAT JSON) " + sql_query)
         try:
@@ -105,14 +107,14 @@ class Preprocessing:
         return query_plan_res
 
     def validate_query(self, query):
-        """
+        '''
         Checks if the given query string is valid.
         Returns:
             dict: A dictionary with the following keys:
-                - error (bool): Indicates if an error occurred during validation.
-                - error_message (str): The error message if an error occurred,
+                error (bool): Indicates if an error occurred during validation.
+                error_message (str): The error message if an error occurred,
                 otherwise an empty string.
-        """
+        '''
         result = {"error": False, "error_message": ""}
         # checks if there's a query to execute
         if not len(query):
@@ -130,7 +132,7 @@ class Preprocessing:
 
 class DBConnection:
     def __init__(self, configList):
-        """Initializes a new instance of the 'Database' class
+        '''Initializes a new instance of the 'Database' class
         
         The constructor reads the database connection details from the config.json file and establishes a connection to the PostgreSQL server
 
@@ -143,7 +145,7 @@ class DBConnection:
             FileNotFoundException: If the config.json file is not found
             ValueError: If the config.json fi
         
-        """
+        '''
         self.host = configList[0]
         self.port = configList[1]
         self.database = configList[2]
@@ -153,8 +155,9 @@ class DBConnection:
         self.cur = self.conn.cursor()
 
     def execute(self, query: str):
-        """Executes a query on the database and returns the results.
-        """
+        '''
+        Executes a query on the database and returns the results.
+        '''
         try:
             self.cur.execute(query)
             column_names = [description[0] for description in self.cur.description]
@@ -164,12 +167,14 @@ class DBConnection:
             pass
 
     def is_query_valid(self, query: str):    
-        """Fetches a single row from the database to check if the query is valid.
+        '''
+        Fetches a single row from the database to check if the query is valid.
+
         Args:
             query (str): Query string that was entered by the user.
         Returns:
             boolean: true if query is valid, false otherwise.
-        """
+        '''
         try:
             self.cur.execute(query)
             self.cur.fetchone()
@@ -184,18 +189,43 @@ class CalculateCost:
 
         # Calculate total cost of all nodes in plan
     def calculateCost(self, plan):
+        '''
+         Calculates the cost of a search. This is used to determine how much the search will take place in order to get an answer to the user
+         
+         Args:
+         	 plan(str): The search plan that we are going to search for
+         
+         Returns: 
+         	 totalCost(float): The total cost of the search plan as a float
+        '''
+        # Return the total cost of the search plan. This is used to determine the cost of a search
         totalCost = 0
+        # Calculate total cost of all plans
         for i in range(len(plan)):     
             initialKey = list(plan.keys())[i]
             initialValue = plan[initialKey]
+            # Add initial cost to totalCost.
             if initialKey == 'Total Cost':
                 totalCost += initialValue
         return totalCost
             
     # Print cost comparison in readable format
     def printCost(self,initialPlan,newPlan):
+        '''
+         Prints the cost of the query. This is used to determine how much it would cost to execute in the new query.
+         
+         Args:
+         	 initialPlan(str): The initial query that is being executed.
+         	 newPlan(str): The new query that is being executed.
+         
+         Returns: 
+         	 A string that is the overall cost of the query and written to compare both initial and new plan in a readable format.
+        '''
+
         total_initial_cost = self.calculateCost(initialPlan)
         total_new_cost = self.calculateCost(newPlan)
+        
+        # The overall cost of executing the query is higher than total_initial_cost.
         if total_new_cost < total_initial_cost:
             total_initial_cost_string = f"The total cost has reduced from {total_initial_cost} in the initial plan to {total_new_cost} in the new plan. This means that the overall cost of executing the query is lower in the new plan, which should result in faster execution times.\n"
             return str(total_initial_cost_string)
@@ -219,7 +249,6 @@ class Comparison:
 
         Returns:
             str: A string describing the differences between the two queries.
-
         '''
         parsed_query1 = parse(sql_query1)
         parsed_query2 = parse(sql_query2)
@@ -274,8 +303,10 @@ class Comparison:
 
     def convert_to_and_of_or_with_and_of(self,clause):
         ''''
+        
         Converts the where clause of a sql's' ddiff into natural language
         E.g. converts to (A AND B) OR C
+        
         '''
         and_clause = self.convert_and_clause(clause['and']) if 'and' in clause else ''
         or_clause = self.convert_or_clause(clause['or']) if 'or' in clause else ''
@@ -290,6 +321,7 @@ class Comparison:
     
     def convert_or_clause(self,or_clause):
         ''''
+        
         Identify and convert OR conditions in the where clause of the sql's' ddiff into natural language
         E.g. A OR B 
         
@@ -307,6 +339,7 @@ class Comparison:
 
     def convert_and_clause(self,and_clause):
         ''''
+        
         Identify and convert OR conditions in the where clause of the sql's' ddiff into natural language
         E.g. A AND B 
         
@@ -318,6 +351,7 @@ class Comparison:
 
     def convert_and_condition(self,and_cond):
         ''''
+        
         Identify and convert AND conditions in the where clause of the sql's' ddiff into natural language
         E.g. A='Apple', B>'Orange' 
         
@@ -368,28 +402,28 @@ class Comparison:
             results.add("order by") 
         if(len(results)>0):
             joined_string = ", ".join(results)
-            return ("The tokens that are changed are in the " + joined_string + " clause")
+            return ("The tokens that are changed are in the " + joined_string + " clause.")
         else:
-            return ("No clause are changed")
+            return ("No clause are changed.")
 
 
     def comparing_changes(self,ddiff, sql_query1, sql_query2,parsed_query1,parsed_query2):
-        """
+        '''
         Compare two SQL queries and generate a string describing the differences between them.
 
-        Parameters:
-        - ddiff: A dictionary containing the differences between the two parsed SQL queries.
-        - sql_query1: The first SQL query, in string format.
-        - sql_query2: The second SQL query, in string format.
-        - parsed_query1: The first SQL query, parsed into a dictionary format.
-        - parsed_query2: The second SQL query, parsed into a dictionary format.
+        Args:
+        	ddiff: A dictionary containing the differences between the two parsed SQL queries.
+        	sql_query1: The first SQL query, in string format.
+        	sql_query2: The second SQL query, in string format.
+        	parsed_query1: The first SQL query, parsed into a dictionary format.
+        	parsed_query2: The second SQL query, parsed into a dictionary format.
 
         Returns:
-        - diffString: A string describing the differences between the two SQL queries. 
-        The string will include information on any changes made to the SELECT, FROM, GROUP BY, or LIMIT clauses, as well as any changes made to the WHERE clause,
-        such as changes in values, new or removed conditions, addition or removal of clauses, etc.
-        If no changes were made, the string will indicate this.
-        """
+        	diffString: A string describing the differences between the two SQL queries. 
+            The string will include information on any changes made to the SELECT, FROM, GROUP BY, or LIMIT clauses, as well as any changes made to the WHERE clause,
+            such as changes in values, new or removed conditions, addition or removal of clauses, etc.
+            If no changes were made, the string will indicate this.
+        '''
         diffString=''
         try:
             #If no changes
@@ -513,13 +547,37 @@ class SearchNode:
 
     # Search for all Joins, Relations and Scan type for a plan
     def searchJoin(self,plan):
+        '''
+        Search for all join types, link them with their respective relations and scan type for selected plan
+        
+        Args:
+            plan(str): plan to be searched
+        
+        Returns: 
+            join_dict(dict): Returns all Join-Relations as a dictionary
+            scan_dict(dict): Returns all Scan-Relations as a dictionary
+        '''
 
         joinList, relationList, scanList = [],[], []
         joinOrder = 0
 
         # find relations to join type and put into a list as a tuple
         def findRelations(plan,joinOrder,joinList, relationList):
+            '''
+            Find Relations in plan and add them to joinList and relationList.
+            
+            Args:
+                plan(str): Plan to look for relations in. It is assumed that plan ['Node Type'] is Join or NestedLoop with joinOrder
+                joinOrder(int): The order which relations would be assigned to any joins
+                joinList(list): List of joins 
+                relationList(list): List of relations
+            
+            Returns:
+                joinList(list): List of joins
+                relationList(list): List of relations
+            '''
 
+            # This function iterates through all the plans in the plan and returns a list of nodes and their children
             for i in range(len(plan)):
                 initialKey = list(plan.keys())[i]
                 initialValue = plan[initialKey]
@@ -527,6 +585,7 @@ class SearchNode:
                 # append all Node Type that contains Join/NestedLoop with joinOrder
                 if initialKey == 'Node Type':
                 
+                    # Add join to joinList. append joinOrder initialValue
                     if "Join" in initialValue or "Nested Loop" in initialValue:
                         joinOrder += 1
                         joinList.append((joinOrder, initialValue))
@@ -538,6 +597,7 @@ class SearchNode:
                     
                 # recursively iterate through all Plans
                 if initialKey == 'Plans':
+                    # Find relations in initialValue.
                     for j in initialValue:
                         findRelations(j,joinOrder,joinList,relationList)
             
@@ -550,9 +610,10 @@ class SearchNode:
         for relations,scan in scanList:
             scan_dict[relations] = scan
     
+
+        # Make a join dictionary that connects Join to Relations based on joinOrder
         join_dict = {}
         joincount=0
-        # Make a join dictionary that connects Join to Relations based on joinOrder
         for join in joinList:
             tempList = []
             joincount+=1
