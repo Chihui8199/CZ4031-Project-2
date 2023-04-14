@@ -396,7 +396,7 @@ class Comparison:
             token_changed_string = self.find_token_changed(ddiff)
             if ddiff  == {}:
                 diffString += "No changes"
-            elif(any(s in token_changed_string for s in ['select', 'from', 'group by', 'limit'])):
+            elif(any(s in token_changed_string for s in ['select', 'from', 'group by', 'limit', 'having', 'order by'])):
                 diffString += token_changed_string
             else:
                 diffString += token_changed_string
