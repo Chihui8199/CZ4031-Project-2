@@ -623,6 +623,7 @@ class Application(ttk.Window):
                         costString = costFunction.printCost(initialPlan, newPlan)
                         self.analysis_text.insert(END, "\nTotal Cost Comparison:\n\n", ("title",))
                         self.analysis_text.insert(END, costString, ("body",))
+                        
                     self.analysis_text.tag_configure("title", font=title_font, underline=True)
                     self.analysis_text.tag_configure("body", font=body_font)
                     self.analysis_text.config(state=DISABLED)
