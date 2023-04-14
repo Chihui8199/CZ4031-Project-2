@@ -580,6 +580,7 @@ class Application(ttk.Window):
                     self.new_query_plan_text.config(state=DISABLED)
 
                     if initialPlan == newPlan:
+                        messagebox.showerror("showwarning", "Both Queries are the same!")
                         pass
 
                     else:
@@ -602,14 +603,16 @@ class Application(ttk.Window):
                             self.analysis_text.insert(END, "Difference in SQL Queries: \n\n", ("title",))
                             self.analysis_text.insert(END, added_analysis_text, ("body",))
 
-                    # Get cost of both plans and compare them
-                    costFunction = explain.CalculateCost()
-                    costString = costFunction.printCost(initialPlan, newPlan)
-                    self.analysis_text.insert(END, "\nTotal Cost Comparison:\n\n", ("title",))
-                    self.analysis_text.insert(END, costString, ("body",))
+                        # Get cost of both plans and compare them
+                        costFunction = explain.CalculateCost()
+                        costString = costFunction.printCost(initialPlan, newPlan)
+                        self.analysis_text.insert(END, "\nTotal Cost Comparison:\n\n", ("title",))
+                        self.analysis_text.insert(END, costString, ("body",))
                     self.analysis_text.tag_configure("title", font=title_font, underline=True)
                     self.analysis_text.tag_configure("body", font=body_font)
                     self.analysis_text.config(state=DISABLED)
+
+                    
 
                 except Exception as e:
                     messagebox.showerror("showwarning", "Both Queries are the same!")
