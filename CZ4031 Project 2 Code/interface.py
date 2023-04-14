@@ -2,6 +2,7 @@
 Contains code for Graphical User Interface
 '''
 
+import os
 import tkinter as tk
 from tkinter import *
 from tkinter import font, messagebox
@@ -204,10 +205,13 @@ class Application(ttk.Window):
         self.configure(bg='#2C3143')
 
         # Set application icon
-        self.favicon_ico_path = 'img/cool.ico'
-        self.icon_photo = ImageTk.PhotoImage(
-            Image.open(self.favicon_ico_path))
-        self.iconphoto(False, self.icon_photo)
+        try:
+            self.favicon_ico_path = 'img/logo.ico'
+            self.icon_photo = ImageTk.PhotoImage(
+                Image.open(self.favicon_ico_path))
+            self.iconphoto(False, self.icon_photo)
+        except:
+            pass
 
     def generate_UI(self):
         '''
@@ -544,16 +548,28 @@ class Application(ttk.Window):
 
                 try:
                     # Generate Graph as images
+
+                    if os.path.isdir("img") :
+                        initial_graph_path = "img/initialPlan"
+                        initial_image_path = "img/initialPlan.png"
+                        new_graph_path = "img/newPlan"
+                        new_image_path = "img/newPlan.png"
+                    else:  
+                        initial_graph_path = "initialPlan"
+                        initial_image_path = "initialPlan.png"
+                        new_graph_path = "newPlan"
+                        new_image_path = "newPlan.png"
+
                     annotator = explain.Annotation(initialPlan)
-                    annotator.generate_graph("img/initialPlan")
+                    annotator.generate_graph(initial_graph_path)
                     annotator = explain.Annotation(newPlan)
-                    annotator.generate_graph("img/newPlan")
+                    annotator.generate_graph(new_graph_path)
 
                     self.initial_query_plan_text.config(state="normal")
                     self.initial_query_plan_text.delete('1.0', END)
                     
                     # Resize image while maintaining aspect ratio
-                    imgInitial = Image.open("img/initialPlan.png")
+                    imgInitial = Image.open(initial_image_path)
                     w, h = imgInitial.size
                     ratio = min(self.initial_query_plan_text.winfo_width() / w, self.initial_query_plan_text.winfo_height() / h)
                     new_size = (int(w * ratio), int(h * ratio))
@@ -568,7 +584,7 @@ class Application(ttk.Window):
                     self.new_query_plan_text.delete('1.0', END)
                     
                     # Resize images while maintaining aspect ratio
-                    imgNew = Image.open("img/newPlan.png")
+                    imgNew = Image.open(new_image_path)
                     w, h = imgNew.size
                     ratio = min(self.new_query_plan_text.winfo_width() / w, self.new_query_plan_text.winfo_height() / h)
                     new_size = (int(w * ratio), int(h * ratio))
@@ -602,11 +618,11 @@ class Application(ttk.Window):
                             self.analysis_text.insert(END, "Difference in SQL Queries: \n\n", ("title",))
                             self.analysis_text.insert(END, added_analysis_text, ("body",))
 
-                    # Get cost of both plans and compare them
-                    costFunction = explain.CalculateCost()
-                    costString = costFunction.printCost(initialPlan, newPlan)
-                    self.analysis_text.insert(END, "\nTotal Cost Comparison:\n\n", ("title",))
-                    self.analysis_text.insert(END, costString, ("body",))
+                        # Get cost of both plans and compare them
+                        costFunction = explain.CalculateCost()
+                        costString = costFunction.printCost(initialPlan, newPlan)
+                        self.analysis_text.insert(END, "\nTotal Cost Comparison:\n\n", ("title",))
+                        self.analysis_text.insert(END, costString, ("body",))
                     self.analysis_text.tag_configure("title", font=title_font, underline=True)
                     self.analysis_text.tag_configure("body", font=body_font)
                     self.analysis_text.config(state=DISABLED)
