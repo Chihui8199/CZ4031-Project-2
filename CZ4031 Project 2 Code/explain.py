@@ -438,7 +438,7 @@ class Comparison:
                                 for cond in conditions:
                                     if f"'{old_value}'" in cond and f"'{new_value}'" not in cond:
                                         column = cond.split()[0]
-                                        diffString += "\nThe " + column + " changed from " + old_value + " to " + new_value + "in the where condition"
+                                        diffString += "\nThe " + column + " changed from " + old_value + " to " + new_value + " in the where condition"
                         else:
                             print(f"Unexpected key format: {key}")
 
@@ -477,7 +477,7 @@ class Comparison:
                     if (converted_clause1)=='':
                         diffString += "\nAddition of " + where_op + " condition to query 2 \n" + str(converted_clause2)
                     else:
-                        diffString += "\nAddition of " + where_op + " condition to query 2 \nQuery 1: " + \
+                        diffString += "\nAddition of " + where_op + " condition to query 2 \n Query 1: " + \
                                 str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
 
                 #Q1-> Q2 has a dictionary item removed
@@ -494,7 +494,7 @@ class Comparison:
                     converted_clause2 = self.convert_to_and_of_or_with_and_of(where_clause2)
                     
                     if converted_clause2 != '':
-                        diffString += "\nRemoved " + where_op + " condition from query 2\nQuery 1: " + \
+                        diffString += "\nRemoved " + where_op + " condition from query 2\n Query 1: " + \
                                     str(converted_clause1) + "\nQuery 2:" + str(converted_clause2)
                     else:
                         diffString += "\nRemoved " + where_op + " condition from query 2\n " + \
