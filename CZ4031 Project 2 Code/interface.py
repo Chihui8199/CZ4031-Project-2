@@ -79,12 +79,49 @@ class Application(ttk.Window):
         queries_text = {
             "Query 1": "select * from customer C, orders O where C.c_mktsegment like 'BUILDING' and C.c_custkey = O.o_custkey",
             "Query 2": "select * from customer C, orders O where C.c_custkey = O.o_custkey",
+            "Query 3": """SELECT 
+  l_orderkey, 
+  SUM(l_extendedprice*(1-l_discount)) AS revenue, 
+  o_orderdate, 
+  o_shippriority
+FROM 
+  customer, 
+  orders, 
+  lineitem
+WHERE 
+  c_mktsegment = 'HOUSEHOLD'
+  AND c_custkey = o_custkey 
+  AND l_orderkey = o_orderkey 
+  AND o_orderdate < '1995-03-15' 
+  AND l_shipdate > '1995-03-15' 
+GROUP BY 
+  l_orderkey, 
+  o_orderdate, 
+  o_shippriority
+HAVING 
+  SUM(l_extendedprice*(1-l_discount)) > 10000
+ORDER BY 
+  revenue DESC, 
+  o_orderdate
+LIMIT 
+  10;""",
+
             "default": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' and c_mktsegment = 'BUILDING' GROUP by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate LIMIT 20",
             "W/O orderby": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' and c_mktsegment = 'BUILDING' GROUP by l_orderkey, o_orderdate, o_shippriority order by o_orderdate LIMIT 20",
             "W/O where": "select l_orderkey, o_orderdate, o_shippriority, sum((l_extendedprice) * (1-l_discount)) as revenue from customer, orders, lineitem where customer.c_custkey = orders.o_orderkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15'  and l_shipdate < '1995-03-15' GROUP by l_orderkey, o_orderdate, o_shippriority order by revenue desc, o_orderdate LIMIT 20",
-            "Query 6": "DELETE FROM table6 WHERE col1='value';",
-            "Query 7": "SELECT * FROM table7 WHERE col1 IN (SELECT col1 FROM table8 WHERE col2='value');"
-        }
+            "Invalid 1": "DELETE FROM table6 WHERE col1='value';",
+            "Invalid 2": "SELECT * FROM table7 WHERE col1 IN (SELECT col1 FROM table8 WHERE col2='value');",
+        "Query 4": """SELECT o.o_orderkey, c.c_custkey, l.l_partkey, SUM(l.l_quantity) AS total_quantity, SUM(l.l_extendedprice) AS total_price
+FROM orders o
+JOIN customer c ON o.o_custkey = c.c_custkey
+JOIN lineitem l ON o.o_orderkey = l.l_orderkey
+WHERE o.o_orderdate BETWEEN '1994-01-01' AND '1994-01-31'
+AND l.l_discount BETWEEN 0.05 AND 0.10
+AND c.c_mktsegment = 'AUTOMOBILE'
+GROUP BY o.o_orderkey, c.c_custkey, l.l_partkey
+HAVING SUM(l.l_quantity) > 10
+ORDER BY c.c_mktsegment, total_quantity DESC;
+""",}
         queries_selection = list(queries_text.keys())
 
         # Initial Query ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -346,7 +383,6 @@ class Application(ttk.Window):
         preprocessor = explain.Preprocessing(self.configList)
         # initial query validation
         isValid = self.initial_query_validation(initial, new, preprocessor)
-        # TODO: @shannen, please check if this is correct
         title_font = font.Font(family="Helvetica", size=18, weight="bold")
         body_font = font.Font(family="Helvetica", size=14)
         if isValid:
