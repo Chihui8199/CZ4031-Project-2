@@ -10,12 +10,12 @@ Project repository for CZ4031 Database System Design Project 2
 
 
 # Running the code
-1. Install the requirements in requirements.txt file by running the command below:
+1) Install the requirements in requirements.txt file by running the command below:
     
     pip install -r requirements.txt 
 
 
-2. Download Graphviz from the following link:
+2) Download Graphviz from the following link:
 
     https://graphviz.org/download/
 
@@ -33,9 +33,17 @@ Project repository for CZ4031 Database System Design Project 2
             
             5. Click "OK" on all windows to close them and save your changes.
             
-            Once you have added the Graphviz bin folder to your PATH environment variable, restart your windows PC. The changes will be made and you should be able to run Graphviz from the command line or from within your Python code.
+            6. Once you have added the Graphviz bin folder to your PATH environment variable, restart your windows PC. The changes will be made and you should be able to run Graphviz from the command line or from within your Python code.
 
-3. Run the project.py file
+3) Run the project.py file
+    
+    python project.py
+
+
+4) Prior to querying, ensure that you log in and establish a connection to the database through the pop-up login window.
+
+
+5) After you've logged in successfully, go ahead and use our program!
 
 
 
