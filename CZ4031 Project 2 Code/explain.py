@@ -7,7 +7,7 @@ from graphviz import Digraph
 from mo_sql_parsing import parse
 from deepdiff import DeepDiff
 
-class Annotation():
+class GraphGeneration():
     def __init__(self, qep_plan):
         '''
          Initialize the QEP visualization. This is the place to do it. You have to call __init__ in order to get the graph and node's visualization attributes
