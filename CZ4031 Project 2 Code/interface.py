@@ -2,6 +2,7 @@
 Contains code for Graphical User Interface
 '''
 
+import os
 import tkinter as tk
 from tkinter import *
 from tkinter import font, messagebox
@@ -567,12 +568,10 @@ class Application(ttk.Window):
 
                 try:
                     # Generate Graph as images
-<<<<<<< Updated upstream
                     annotator = explain.Annotation(initialPlan)
                     annotator.generate_graph("img/initialPlan")
                     annotator = explain.Annotation(newPlan)
                     annotator.generate_graph("img/newPlan")
-=======
 
                     if os.path.isdir("img") :
                         initial_graph_path = "img/initialPlan"
@@ -589,7 +588,6 @@ class Application(ttk.Window):
                     annotator.generate_graph(initial_graph_path)
                     annotator = explain.GraphGenerator(newPlan)
                     annotator.generate_graph(new_graph_path)
->>>>>>> Stashed changes
 
                     self.initial_query_plan_text.config(state="normal")
                     self.initial_query_plan_text.delete('1.0', END)
