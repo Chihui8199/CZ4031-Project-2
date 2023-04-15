@@ -129,7 +129,7 @@ QUERIES_TEXT = {
             ORDER BY o_orderdate
             LIMIT 10;""",
 
-            "Query 18": """SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) AS revenue, o_orderdate, o_shippriority
+            "Query 18": """SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) AS revenue, o_orderdate
             FROM customer, orders, lineitem
             WHERE c_mktsegment = 'HOUSEHOLD'
                 AND c_custkey = o_custkey 
@@ -165,28 +165,51 @@ QUERIES_TEXT = {
             ORDER BY o_orderdate 
             LIMIT 10; """,
             
-            "Query 21": """SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) AS revenue, o_orderdate, o_shippriority 
-            FROM customer, orders, lineitem 
+            "Query 21": """SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) AS revenue, o_orderdate, o_shippriority
+            FROM customer, orders, lineitem
             WHERE c_mktsegment = 'HOUSEHOLD'
                 AND c_custkey = o_custkey 
                 AND l_orderkey = o_orderkey 
                 AND o_orderdate < '1995-03-15' 
-                AND l_shipdate > '1995-03-15'  
-            GROUP BY l_orderkey, o_orderdate, o_shippriority 
-            HAVING revenue > 10000
-            ORDER BY revenue DESC, o_orderdate 
-            LIMIT 10; """,
+                AND l_shipdate > '1995-03-15' 
+            GROUP BY l_orderkey, o_orderdate, o_shippriority
+            HAVING SUM(l_extendedprice*(1-l_discount)) > 10000
+            ORDER BY revenue DESC, o_orderdate
+            LIMIT 10;""",
 
-            "Query 22": """SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) AS revenue, o_orderdate, o_shippriority 
-            FROM customer, orders, lineitem 
+            "Query 22": """SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) AS revenue, o_orderdate, o_shippriority
+            FROM customer, orders, lineitem
             WHERE c_mktsegment = 'HOUSEHOLD'
                 AND c_custkey = o_custkey 
                 AND l_orderkey = o_orderkey 
                 AND o_orderdate < '1995-03-15' 
-                AND l_shipdate > '1995-03-15'  
-            GROUP BY l_orderkey, o_orderdate, o_shippriority 
-            ORDER BY revenue DESC, o_orderdate 
-            LIMIT 10; """,
+                AND l_shipdate > '1995-03-15' 
+            GROUP BY l_orderkey, o_orderdate, o_shippriority
+            ORDER BY revenue DESC, o_orderdate
+            LIMIT 10;""",
+
+            "Query 23": """SELECT l_orderkey, SUM(l_extendedprice*(1-l_discount)) AS revenue, o_orderdate, o_shippriority
+            FROM customer, orders, lineitem
+            WHERE c_mktsegment = 'HOUSEHOLD'
+                AND c_custkey = o_custkey 
+                AND l_orderkey = o_orderkey 
+                AND o_orderdate < '1995-03-15' 
+                AND l_shipdate > '1995-03-15' 
+            GROUP BY l_orderkey, o_orderdate, o_shippriority
+            HAVING SUM(l_extendedprice*(1-l_discount)) > 10000
+            ORDER BY o_orderdate
+            LIMIT 10;""",
+
+            "Query 24": """SELECT o_orderdate, c_custkey
+            FROM customer, orders
+            WHERE c_mktsegment = 'BUILDING' 
+                AND c_custkey = o_custkey 
+                AND o_orderdate < '1995-03-15' 
+            GROUP BY o_orderdate, c_custkey
+            ORDER BY c_custkey
+            LIMIT 12;""",
+
+
             
         }
 
@@ -544,10 +567,29 @@ class Application(ttk.Window):
 
                 try:
                     # Generate Graph as images
+<<<<<<< Updated upstream
                     annotator = explain.Annotation(initialPlan)
                     annotator.generate_graph("img/initialPlan")
                     annotator = explain.Annotation(newPlan)
                     annotator.generate_graph("img/newPlan")
+=======
+
+                    if os.path.isdir("img") :
+                        initial_graph_path = "img/initialPlan"
+                        initial_image_path = "img/initialPlan.png"
+                        new_graph_path = "img/newPlan"
+                        new_image_path = "img/newPlan.png"
+                    else:  
+                        initial_graph_path = "initialPlan"
+                        initial_image_path = "initialPlan.png"
+                        new_graph_path = "newPlan"
+                        new_image_path = "newPlan.png"
+
+                    annotator = explain.GraphGenerator(initialPlan)
+                    annotator.generate_graph(initial_graph_path)
+                    annotator = explain.GraphGenerator(newPlan)
+                    annotator.generate_graph(new_graph_path)
+>>>>>>> Stashed changes
 
                     self.initial_query_plan_text.config(state="normal")
                     self.initial_query_plan_text.delete('1.0', END)
